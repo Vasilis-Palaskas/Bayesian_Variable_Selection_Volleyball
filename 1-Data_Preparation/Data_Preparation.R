@@ -174,51 +174,62 @@ away_block_perfect,away_block_net_violation,away_block_error,away_setting_error)
 
 
 
-# Data frame in which we keep both home and away teams' skill events
-
-colnames(new_volley)[29:53]<-names(new_volley)[4:28]
-dat_by_set<-rbind(new_volley[,4:28],new_volley[,29:53])
-colnames(dat_by_set)[1]<-c("team")
-head(dat_by_set,30)
-
-colnames(datafr_teams_scores_set_skills)[c(2,4)]<-names(datafr_teams_scores_set_skills)[c(1,3)]
-names(datafr_teams_scores_set_skills)
-dat_by_game<-rbind(datafr_teams_scores_set_skills[,c(1,3)],
-datafr_teams_scores_set_skills[,c(2,4)])
-
-colnames(dat_by_game)<-c("team","sets score")
-
-# Data frame with both home and away teams with corresponding scores and
-# a new variable with difference of score sets(home-away score)
-# with range of variable (-3,3) without zero. This dataframe is proper
-# poisson-difference (skellam) truncated in value  0.
-
-
-match_set_result<-NULL
-datafr_teams_scores_set<-data.frame(datafr_teams_scores_set,
-dif_set=datafr_teams_scores_set[,3]-datafr_teams_scores_set[,4])
-dim(datafr_teams_scores_set)
 
 
 
 
-# Also contains binary
-# variable for home or away win (1 or 0)
-# This dataset  includes in each match
-# the competitive teams, their set scoes, the set difference
-# and the binary variable regarding with the winner of each match
-# It does not include skill event actions
 
-win_team_match<-NULL
-for (i in 1:length(home_Team)){
- if (datafr_teams_scores_set$dif_set[i]>0) {
-  win_team_match[i]<-as.vector(datafr_teams_scores_set$home_Team[i])
-  match_set_result[i]<-1
- } else {
-  win_team_match[i]<-as.vector(datafr_teams_scores_set$away_Team[i])
-  match_set_result[i]<-0
- }
-}
 
-datafr_teams_scores_set_win<-data.frame(datafr_teams_scores_set,team_win=win_team_match,
-bin_result=match_set_result)
+
+
+
+
+
+# # Data frame in which we keep both home and away teams' skill events
+# 
+# colnames(new_volley)[29:53]<-names(new_volley)[4:28]
+# dat_by_set<-rbind(new_volley[,4:28],new_volley[,29:53])
+# colnames(dat_by_set)[1]<-c("team")
+# head(dat_by_set,30)
+# 
+# colnames(datafr_teams_scores_set_skills)[c(2,4)]<-names(datafr_teams_scores_set_skills)[c(1,3)]
+# names(datafr_teams_scores_set_skills)
+# dat_by_game<-rbind(datafr_teams_scores_set_skills[,c(1,3)],
+# datafr_teams_scores_set_skills[,c(2,4)])
+# 
+# colnames(dat_by_game)<-c("team","sets score")
+# 
+# # Data frame with both home and away teams with corresponding scores and
+# # a new variable with difference of score sets(home-away score)
+# # with range of variable (-3,3) without zero. This dataframe is proper
+# # poisson-difference (skellam) truncated in value  0.
+# 
+# 
+# match_set_result<-NULL
+# datafr_teams_scores_set<-data.frame(datafr_teams_scores_set,
+# dif_set=datafr_teams_scores_set[,3]-datafr_teams_scores_set[,4])
+# dim(datafr_teams_scores_set)
+# 
+# 
+# 
+# 
+# # Also contains binary
+# # variable for home or away win (1 or 0)
+# # This dataset  includes in each match
+# # the competitive teams, their set scoes, the set difference
+# # and the binary variable regarding with the winner of each match
+# # It does not include skill event actions
+# 
+# win_team_match<-NULL
+# for (i in 1:length(home_Team)){
+#  if (datafr_teams_scores_set$dif_set[i]>0) {
+#   win_team_match[i]<-as.vector(datafr_teams_scores_set$home_Team[i])
+#   match_set_result[i]<-1
+#  } else {
+#   win_team_match[i]<-as.vector(datafr_teams_scores_set$away_Team[i])
+#   match_set_result[i]<-0
+#  }
+# }
+# 
+# datafr_teams_scores_set_win<-data.frame(datafr_teams_scores_set,team_win=win_team_match,
+# bin_result=match_set_result)
