@@ -100,8 +100,8 @@ for (i in 1:T){
 }
 
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
-save(gammas_matrix,file="new_ordered_gammas")
-save(betas_matrix,file="new_ordered_betas")
+save(gammas_matrix,file="BVS_Ordered_Skills_gammas")
+save(betas_matrix,file="BVS_Ordered_Skills_betas")
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
 warmup<-6000

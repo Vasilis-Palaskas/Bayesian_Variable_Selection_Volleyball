@@ -3,7 +3,7 @@ library(rstan)
 library(coda)
 library(shinystan)
 # Choose the working directory of this file (.../BVS_Paper/Ordered_TA_Skills)
-setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/Ordered_TA_Skills")
+setwd("C:\\Users\\vasileios palaskas\\Desktop\\Github folder\\Bayesian_Variable_Selection_Volleyball\\Ordered_TA_Skills")
 # Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
 load("datalist_ordered")
 
@@ -18,7 +18,7 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 
 ## Run Full_ordered_skills.stan
-Full_ordered_team_abilities_skills<-stan("C:\\Users\\vasileios palaskas\\Desktop\\BVS_Paper\\Ordered_TA_Skills\\Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
+Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
                           data=dataList,control=list(max_treedepth=15),cores=1)
 
 #save(Full_ordered_team_abilities_skills,file="Full_ordered_team_abilities_skills")
@@ -103,10 +103,13 @@ for (i in 1:T){
   gammas_matrix<-c(gammas_matrix,gammas)
   betas_matrix<-c(betas_matrix,betas)
 }
+save(gammas_matrix,file="BVS_Ordered_TA_Skills_gammas")
+save(betas_matrix,file="BVS_Ordered_TA_Skills_betas")
 
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
 gammas_matrix
 betas_matrix
+
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
 warmup<-20000
 # Each column includes the gammas values of each candidate variable.
