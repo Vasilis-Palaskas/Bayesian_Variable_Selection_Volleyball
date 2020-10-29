@@ -122,7 +122,8 @@ print(posterior_inclusion_probabilities)
 # MCMC Convergence diagnostics
 
 
-
+## NOTE: I ran the model with more chains to check the Gelman-Rubin statistic
+##       R_hat and the effective sample size and everything works well!
 
 
 
