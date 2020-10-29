@@ -13,6 +13,7 @@ load("data_zdts_skills")
 
 
 
+
 #### Standardization of the Model Matrices for numerical convenience
 X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)
 for (i in 1:dim(X_home)[2]){
