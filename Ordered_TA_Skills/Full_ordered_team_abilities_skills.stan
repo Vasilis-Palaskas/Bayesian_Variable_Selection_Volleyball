@@ -24,6 +24,7 @@ transformed parameters {
   gen_abil[12] = -sum(gen_abil_raw);
 }
 
+
 model { 
   vector[N] mu = X * beta+gen_abil[home_team]-gen_abil[away_team];
   
