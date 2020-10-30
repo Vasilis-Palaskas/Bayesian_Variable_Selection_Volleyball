@@ -131,6 +131,20 @@ posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,
 print(posterior_inclusion_probabilities)
 
 ### MCMC Convergence Checking
+# 
+# a) Firstly, for gammas and betas indicators
+# 
+# convert them to a mcmc pobject in terms of our convenience
+mcmc_final_posterior_values_gammas<-as.mcmc(final_posterior_values_gammas)
+mcmc_final_posterior_values_betas<-as.mcmc(final_posterior_values_betas)
+
+autocorr.plot(mcmc_final_posterior_values_gammas)
+autocorr.plot(mcmc_final_posterior_values_betas)
+traceplot(mcmc_final_posterior_values_gammas)
+traceplot(mcmc_final_posterior_values_betas)
+cumsumplot(mcmc_final_posterior_values_gammas)
+
+### MCMC Posterior Summary Plots
 
 ## coefplot for team abilities
 teams <- c("Ethnikos Alexandroupolis", "Pamvochaikos",

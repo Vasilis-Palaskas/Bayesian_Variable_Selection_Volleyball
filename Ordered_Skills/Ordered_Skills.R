@@ -105,6 +105,8 @@ save(betas_matrix,file="BVS_Ordered_Skills_betas")
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
 warmup<-6000
+warmup<-54
+T<-156
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_gammas<-matrix(gammas_matrix[(dataList$K*warmup+1):length(gammas_matrix)],
                                       nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
@@ -113,7 +115,7 @@ final_posterior_values_betas<-matrix(betas_matrix[(dataList$K*warmup+1):length(b
                                      nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
 # Prepare a dataframe by assigning in the variables names the corresponding column names.
 df_final_posterior_values_gammas<-as.data.frame(final_posterior_values_gammas)
-colnames(df_final_posterior_values_gammas)<-names(dataList_order_skills$X)
+colnames(df_final_posterior_values_gammas)<-names(dataList$X)
 # Step 8: Obtain the posterior inclusion probabilities for each one candidate variable
 posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),3)
 print(posterior_inclusion_probabilities)
@@ -124,11 +126,14 @@ print(posterior_inclusion_probabilities)
 # a) Firstly, for gammas and betas indicators
 # 
 # convert them to a mcmc pobject in terms of our convenience
-mcmc_final_posterior_values_gammas<-as.mcmc(mcmc_final_posterior_values_gammas)
-mcmc_final_posterior_values_betas<-as.mcmc(mcmc_final_posterior_values_betas)
+mcmc_final_posterior_values_gammas<-as.mcmc(final_posterior_values_gammas)
+mcmc_final_posterior_values_betas<-as.mcmc(final_posterior_values_betas)
 
 autocorr.plot(mcmc_final_posterior_values_gammas)
 autocorr.plot(mcmc_final_posterior_values_betas)
+traceplot(mcmc_final_posterior_values_gammas)
+traceplot(mcmc_final_posterior_values_betas)
+cumsumplot(mcmc_final_posterior_values_gammas)
 
 ## Ergodic plots
 
