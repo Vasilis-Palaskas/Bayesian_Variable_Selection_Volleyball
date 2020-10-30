@@ -203,3 +203,26 @@ posterior_inclusion_probabilities_away<-round(apply(df_final_posterior_values_ga
 print(posterior_inclusion_probabilities_away)
 
 # MCMC Convergence diagnostics
+# a) Firstly, for gammas and betas indicators
+# 
+# convert them to a mcmc pobject in terms of our convenience
+mcmc_final_posterior_values_gammas_home<-as.mcmc(final_posterior_values_gammas_home)
+mcmc_final_posterior_values_gammas_away<-as.mcmc(final_posterior_values_gammas_away)
+
+mcmc_final_posterior_values_betas_home<-as.mcmc(final_posterior_values_betas_home)
+mcmc_final_posterior_values_betas_away<-as.mcmc(final_posterior_values_betas_away)
+
+autocorr.plot(mcmc_final_posterior_values_gammas_home)
+autocorr.plot(mcmc_final_posterior_values_gammas_away)
+autocorr.plot(mcmc_final_posterior_values_betas_home)
+autocorr.plot(mcmc_final_posterior_values_betas_away)
+
+traceplot(mcmc_final_posterior_values_gammas_home)
+traceplot(mcmc_final_posterior_values_gammas_away)
+traceplot(mcmc_final_posterior_values_betas_home)
+traceplot(mcmc_final_posterior_values_betas_away)
+
+cumsumplot(mcmc_final_posterior_values_gammas_home)
+cumsumplot(mcmc_final_posterior_values_gammas_away)
+cumsumplot(mcmc_final_posterior_values_betas_home)
+cumsumplot(mcmc_final_posterior_values_betas_away)
