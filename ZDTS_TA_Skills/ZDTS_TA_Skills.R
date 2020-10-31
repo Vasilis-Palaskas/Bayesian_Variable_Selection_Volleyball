@@ -13,8 +13,6 @@ load("data_zdts_skills")
 
 
 #Model matrices for home and away sets scored, respectively
-X_home<-data_zdts_skills[,c(1:17)]
-X_away<-data_zdts_skills[,c(18:34)]
 
 
 #Rename the columns

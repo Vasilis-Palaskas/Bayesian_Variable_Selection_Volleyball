@@ -41,19 +41,20 @@ functions {
 data {
   int <lower=1> n_games; //number of games 132
   int <lower=1> n_teams; //number of teams 12
-  int<lower=1> K;       // Dimension of model matrix (without intercept because mu is our intercept)
-  matrix[n_games, K] X_home;   //Model matrix for home teams
-  matrix[n_games,K] X_away;    // Model matrix for away teams
+  int<lower=1> K_home;       // number of home skill variables
+    int<lower=1> K_away;       // number of home skill variables
+
+  matrix[n_games, K_home] X_home;   // design matrix for (home team's) skills
+  matrix[n_games,K_away] X_away;    // design matrix for (away team's) skills
   int <lower=0,upper=3> home_sets[n_games];//0-3 sets can have each team
   int <lower=0,upper=3> away_sets[n_games];//0-3 sets can have each team
-  int home_team[n_games];
+    int home_team[n_games];
   int away_team[n_games];
 }
-
 parameters {
   
-  vector[K] beta_home;
-  vector[K] beta_away;
+ vector[K_home] beta_home;
+  vector[K_away] beta_away;
   real mu;
   real home;
   real attack_raw[n_teams - 1];

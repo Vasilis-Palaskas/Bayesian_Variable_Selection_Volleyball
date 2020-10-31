@@ -12,9 +12,6 @@ load("X_away")
 load("data_zdts_skills")
 
 
-#Model matrices for home and away sets scored, respectively
-X_home<-data_zdts_skills[,c(1:17)]
-X_away<-data_zdts_skills[,c(18:34)]
 
 #Rename the columns
 colnames(X_home)<-c("home_perfect_serve","home_very_good_serve","home_failed_serve",
@@ -48,14 +45,19 @@ colnames(X_away_std)<-c("away_perfect_serve","away_very_good_serve","away_failed
                     "away_perfect_att2","away_blocked_att2","away_failed_att2",
                     "away_perfect_block","away_net_violation_block","away_failed_block","away_failed_setting")
 
-X_home_std<-X_home_std[,colnames(X_home_std)%in%
-                         ""]
-
-data_zdts_skills<-list(n_games=132,
+X_home_std<-X_home_std[,colnames(X_home_std)%in%c( "home_poor_pass","home_failed_pass",
+                                                   "home_blocked_att1"
+)
+]
+X_away_std<-X_away_std[,colnames(X_away_std)%in%c("away_failed_serve","away_poor_pass","away_failed_pass",
+                                                  "away_blocked_att1","away_failed_att1",
+                                                  "away_net_violation_block","away_failed_block")
+]
+data_zdts_skills<-list(n_games=n_games=data_zdts_skills$N,
                        away_team=as.numeric(data_zdts_skills$away_team),
                        home_team=as.numeric(data_zdts_skills$home_team),
                        n_teams=data_zdts_skills$n_teams,
-                       X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                       X_home=X_home_std,X_away=X_away_std,K_home=ncol(X_home_std),K_away=ncol(X_away_std),
                        home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 
