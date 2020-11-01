@@ -2,7 +2,6 @@
 library(rstan)
 library(coda)
 library(shinystan)
-library(arm)
 # Choose the working directory of this file (.../BVS_Paper/Ordered_TA_Skills)
 setwd("C:\\Users\\vasileios palaskas\\Desktop\\Github folder\\Bayesian_Variable_Selection_Volleyball\\Ordered_TA_Skills")
 # Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
