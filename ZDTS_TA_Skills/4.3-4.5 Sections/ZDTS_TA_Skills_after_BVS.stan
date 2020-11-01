@@ -83,20 +83,20 @@ transformed parameters {
   // Creation of linear predictor
   lambda1_star= exp(mu+home+attack[home_team]+defense[away_team]+X_home * beta_home);          
   lambda2_star= exp(mu+attack[away_team]+defense[home_team]+X_away* beta_away);  
- lambda1=lambda1_star;
-    lambda2=lambda2_star;
-  // for (g in 1:n_games) {
-  //   if (lambda1_star[g]>150.0){
-  //     lambda1[g]=150.0;
-  //   } else {
-  //     lambda1[g]=lambda1_star[g];
-  //   }
-  //   if (lambda2_star[g]>150.0){
-  //     lambda2[g]=150.0;
-  //   } else {
-  //     lambda2[g]=lambda2_star[g];
-  //   }
-  // }
+ // lambda1=lambda1_star;
+ //    lambda2=lambda2_star;
+  for (g in 1:n_games) {
+    if (lambda1_star[g]>150.0){
+      lambda1[g]=150.0;
+    } else {
+      lambda1[g]=lambda1_star[g];
+    }
+    if (lambda2_star[g]>150.0){
+      lambda2[g]=150.0;
+    } else {
+      lambda2[g]=lambda2_star[g];
+    }
+  }
 }
 
 model {
