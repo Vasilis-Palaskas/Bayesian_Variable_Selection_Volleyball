@@ -1,7 +1,9 @@
+
 # Load the proper libraries.
 library(rstan)
 library(coda)
-
+library(shinystan)
+library(loo)
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
 setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/ZDTS_Skills")
 # Load the properly prepared data for both home and away skill events as well as
