@@ -4,7 +4,7 @@ library(coda)
 
 # Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
 
-setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/Ordered_TA_Skills")
+setwd(getwd())
 
 # Load the properly prepared data ("Data_ordered_skills").
 load("datalist_ordered")
@@ -100,29 +100,48 @@ for (i in 1:T){
 }
 
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
-save(gammas_matrix,file="new_ordered_gammas")
-save(betas_matrix,file="new_ordered_betas")
+save(gammas_matrix,file="BVS_Ordered_Skills_gammas")
+save(betas_matrix,file="BVS_Ordered_Skills_betas")
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
 warmup<-6000
+warmup<-54
+T<-156
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_gammas<-matrix(gammas_matrix[(dataList$K*warmup+1):length(gammas_matrix)],
                                       nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_betas<-matrix(betas_matrix[(dataList$K*warmup+1):length(betas_matrix)],
                                      nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
-# Prepare a dataframe by assigning in the variables names the correspodnding column names.
+# Prepare a dataframe by assigning in the variables names the corresponding column names.
 df_final_posterior_values_gammas<-as.data.frame(final_posterior_values_gammas)
-colnames(df_final_posterior_values_gammas)<-names(dataList_order_skills$X)
+names(dataList$X)<-c("perfect serve","very good serve","failed serve"," perfect pass","
+                                  very good pass","poor pass","failed pass","perfect att1","blocked att1",
+                     "failed att1","perfect att2","blocked att2","failed att2","perfect block",
+                     "block net violation","failed block","failed setting")
+colnames(df_final_posterior_values_gammas)<-names(dataList$X)
 # Step 8: Obtain the posterior inclusion probabilities for each one candidate variable
 posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),3)
 print(posterior_inclusion_probabilities)
 
 
-# MCMC Convergence diagnostics
+### MCMC Convergence Checking
+# 
+# a) Firstly, for gammas and betas indicators
+# 
+# convert them to a mcmc pobject in terms of our convenience
+mcmc_final_posterior_values_gammas<-as.mcmc(final_posterior_values_gammas)
+mcmc_final_posterior_values_betas<-as.mcmc(final_posterior_values_betas)
+
+autocorr.plot(mcmc_final_posterior_values_gammas)
+autocorr.plot(mcmc_final_posterior_values_betas)
+traceplot(mcmc_final_posterior_values_gammas)
+traceplot(mcmc_final_posterior_values_betas)
+cumsumplot(mcmc_final_posterior_values_gammas)
 
 
-
+## NOTE (Leo_Egidi): I ran the model with more chains to check the Gelman-Rubin statistic
+##       R_hat and the effective sample size and everything works well!
 
 
 

@@ -12,6 +12,19 @@ load("X_away")
 load("data_zdts_skills")
 
 
+#Model matrices for home and away sets scored, respectively
+
+
+#Rename the columns
+colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
+                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+                    "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
+                    "(Home) block net violation","(Home) failed block","(Home) failed setting")
+
+colnames(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
+                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+                    "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
+                    "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
 #### Standardization of the Model Matrices for numerical convenience
 X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)
@@ -20,6 +33,15 @@ for (i in 1:dim(X_home)[2]){
   X_away_std[,i]<-(X_away[,i]-mean(X_away[,i]))/sd(X_away[,i])
 }
 
+colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
+                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+                        "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
+                        "(Home) block net violation","(Home) failed block","(Home) failed setting")
+
+colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
+                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+                        "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
+                        "(Away) block net violation","(Away) failed block","(Away) failed setting")
 data_zdts_skills<-list(n_games=132,
 		away_team=as.numeric(data_zdts_skills$away_team),
 			home_team=as.numeric(data_zdts_skills$home_team),
@@ -202,3 +224,26 @@ posterior_inclusion_probabilities_away<-round(apply(df_final_posterior_values_ga
 print(posterior_inclusion_probabilities_away)
 
 # MCMC Convergence diagnostics
+# a) Firstly, for gammas and betas indicators
+# 
+# convert them to a mcmc pobject in terms of our convenience
+mcmc_final_posterior_values_gammas_home<-as.mcmc(final_posterior_values_gammas_home)
+mcmc_final_posterior_values_gammas_away<-as.mcmc(final_posterior_values_gammas_away)
+
+mcmc_final_posterior_values_betas_home<-as.mcmc(final_posterior_values_betas_home)
+mcmc_final_posterior_values_betas_away<-as.mcmc(final_posterior_values_betas_away)
+
+autocorr.plot(mcmc_final_posterior_values_gammas_home)
+autocorr.plot(mcmc_final_posterior_values_gammas_away)
+autocorr.plot(mcmc_final_posterior_values_betas_home)
+autocorr.plot(mcmc_final_posterior_values_betas_away)
+
+traceplot(mcmc_final_posterior_values_gammas_home)
+traceplot(mcmc_final_posterior_values_gammas_away)
+traceplot(mcmc_final_posterior_values_betas_home)
+traceplot(mcmc_final_posterior_values_betas_away)
+
+cumsumplot(mcmc_final_posterior_values_gammas_home)
+cumsumplot(mcmc_final_posterior_values_gammas_away)
+cumsumplot(mcmc_final_posterior_values_betas_home)
+cumsumplot(mcmc_final_posterior_values_betas_away)

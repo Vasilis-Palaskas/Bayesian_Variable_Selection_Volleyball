@@ -3,7 +3,7 @@ library(rstan)
 library(coda)
 library(shinystan)
 # Choose the working directory of this file (.../BVS_Paper/Ordered_TA_Skills)
-setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/Ordered_TA_Skills")
+setwd("C:\\Users\\vasileios palaskas\\Desktop\\Github folder\\Bayesian_Variable_Selection_Volleyball\\Ordered_TA_Skills")
 # Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
 load("datalist_ordered")
 
@@ -18,7 +18,7 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 
 ## Run Full_ordered_skills.stan
-Full_ordered_team_abilities_skills<-stan("C:\\Users\\vasileios palaskas\\Desktop\\BVS_Paper\\Ordered_TA_Skills\\Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
+Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
                           data=dataList,control=list(max_treedepth=15),cores=1)
 
 #save(Full_ordered_team_abilities_skills,file="Full_ordered_team_abilities_skills")
@@ -103,10 +103,13 @@ for (i in 1:T){
   gammas_matrix<-c(gammas_matrix,gammas)
   betas_matrix<-c(betas_matrix,betas)
 }
+save(gammas_matrix,file="BVS_Ordered_TA_Skills_gammas")
+save(betas_matrix,file="BVS_Ordered_TA_Skills_betas")
 
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
 gammas_matrix
 betas_matrix
+
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
 warmup<-20000
 # Each column includes the gammas values of each candidate variable.
@@ -127,9 +130,50 @@ posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,
 print(posterior_inclusion_probabilities)
 
 ### MCMC Convergence Checking
+# 
+# a) Firstly, for gammas and betas indicators
+# 
+# convert them to a mcmc pobject in terms of our convenience
+mcmc_final_posterior_values_gammas<-as.mcmc(final_posterior_values_gammas)
+mcmc_final_posterior_values_betas<-as.mcmc(final_posterior_values_betas)
 
+autocorr.plot(mcmc_final_posterior_values_gammas)
+autocorr.plot(mcmc_final_posterior_values_betas)
+traceplot(mcmc_final_posterior_values_gammas)
+traceplot(mcmc_final_posterior_values_betas)
+cumsumplot(mcmc_final_posterior_values_gammas)
 
+### MCMC Posterior Summary Plots
 
+## coefplot for team abilities
+teams <- c("Ethnikos Alexandroupolis", "Pamvochaikos",
+           "Iraklis Petosfairishs",   "Kyzikos Peramou",   
+           "Panachaiki",    "Foinikas Syrou",          
+            "Kifisia",  "Orestiada",  "Olympiacos",              
+            "Panathinaikos",  "Iraklis Chalkidas",  "Paok") 
+teams_index <- unique(dataList$home_team)
 
+sims <- rstan::extract(Full_ordered_team_abilities_skills)
+
+gen_abil <- sims$gen_abil
+gen_abil_hat <- apply(gen_abil,2, median)
+gen_abil_sd <- apply(gen_abil,2, sd)
+#teams_index <- match(squadre16_17, teams)
+# att <- att[,3,teams_index]
+# def <- def[,3,teams_index]
+# att_hat <- apply(att,2,median)
+# att_sd <- apply(att,2,sd)
+# def_hat <- apply(def,2,median)
+# def_sd <- apply(def,2,sd)
+ ord <- order(gen_abil_hat, decreasing = TRUE)
+# ord_2 <- order(def_hat)
+
+coefplot( rev(gen_abil_hat[ord]), 
+          rev(gen_abil_sd[ord]), 
+          CI=2, 
+          varnames=rev(as.character(teams[teams_index])[ord]), 
+          main="General abilities (estim. +/- 2 s.e.)\n", 
+          cex.var=1.5, mar=c(1,6,4.5,1),
+          cex.main=1.3,pch=16, cex=2, col="red")
 
 
