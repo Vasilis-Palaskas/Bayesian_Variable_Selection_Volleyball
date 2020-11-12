@@ -19,7 +19,7 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 ## Run Full_ordered_skills.stan
 Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=4,thin=2,
-                          data=dataList,control=list(max_treedepth=15),cores=1)
+                          data=dataList,control=list(max_treedepth=15),cores=4)
 
 save(Full_ordered_skills,file="Full_ordered_skills")
 # Load the results from the full ordered logistic model (with all candidate variables).
