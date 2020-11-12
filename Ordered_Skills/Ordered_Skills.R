@@ -59,7 +59,7 @@ for (i in 1:T){
   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
   ord_volley_skills_all<-stan("Ordered_BVS_Skills.stan",
-                              data=data_varsel,chains=4,
+                              data=data_varsel,chains=1,
                               iter=21,warmup=20,init=list(list(betas=betas,temp_Intercept=temp_Intercept)),
                               control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))
   
