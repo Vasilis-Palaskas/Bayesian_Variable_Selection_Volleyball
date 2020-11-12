@@ -18,7 +18,7 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 
 ## Run Full_ordered_skills.stan
-Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=1,thin=2,
+Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=4,thin=2,
                           data=dataList,control=list(max_treedepth=15),cores=1)
 
 save(Full_ordered_skills,file="Full_ordered_skills")
@@ -59,7 +59,7 @@ for (i in 1:T){
   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
   ord_volley_skills_all<-stan("Ordered_BVS_Skills.stan",
-                              data=data_varsel,chains=1,
+                              data=data_varsel,chains=4,
                               iter=21,warmup=20,init=list(list(betas=betas,temp_Intercept=temp_Intercept)),
                               control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))
   
