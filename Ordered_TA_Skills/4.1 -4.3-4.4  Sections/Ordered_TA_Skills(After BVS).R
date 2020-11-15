@@ -86,7 +86,7 @@ skill_events<-dataList$X
 
 X_ordered_TA_Skills<-skill_events[,colnames(skill_events)%in%
                                       c("failed serve",
-                                        "perfect att1", "failed att1",
+                                        "perfect att1", "failed att1", 
                                         "perfect att2", "failed att2",
                                         "perfect block","failed setting") ]
 model_data<-list(Y=dataList$Y,X=X_ordered_TA_Skills,n_teams=12,
@@ -165,6 +165,16 @@ loo(log_lik_ordered_TA_skills_after_BVS_model4)#for model with thin=1
 loo(log_lik_ordered_TA_skills_after_BVS_model4,r_eff=r_eff_log_lik_final_ordered_logistic)#for model with proper thinning 379,9
 DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model4)#338.
 
+###----DIC, WAIC Comparisons
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model1)#346.0
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model2)#346.0
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model3)#346.0
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model4)#346.0
+
+waic(log_lik_ordered_TA_skills_after_BVS_model1)####296.5
+waic(log_lik_ordered_TA_skills_after_BVS_model2)####296.5
+waic(log_lik_ordered_TA_skills_after_BVS_model3)####296.5
+waic(log_lik_ordered_TA_skills_after_BVS_model4)####296.5
 
 ###### SECTION 4.4 Final chosen ordered logistic model with team abilities
 ### MCMC Posterior Summary Plots

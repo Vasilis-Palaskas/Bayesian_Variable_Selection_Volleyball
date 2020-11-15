@@ -157,7 +157,17 @@ loo(log_lik_ordered_skills_after_BVS_model4)#for model with thin=1
 loo(log_lik_ordered_skills_after_BVS_model4,r_eff=r_eff_log_lik_ordered_skills_after_BVS_model4)#for model with proper thinning 379,9
 DIC_Gelman(deviance_ordered_skills_after_BVS_model4)
 
+# WAIC, DIC
+# 
+waic(log_lik_ordered_skills_after_BVS_model1)####273.2
+waic(log_lik_ordered_skills_after_BVS_model2)####273.2
+waic(log_lik_ordered_skills_after_BVS_model3)####273.2
+waic(log_lik_ordered_skills_after_BVS_model4)####273.2
 
+DIC_Gelman(deviance_ordered_skills_after_BVS_model1)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model2)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model3)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model4)
 
 ###### SECTION 4.4 Final chosen ordered logistic model with team abilities
 skill_events<-dataList$X
