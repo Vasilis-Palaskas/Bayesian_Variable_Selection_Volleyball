@@ -48,7 +48,7 @@ gen_abil_raw<-gen_abil_raw_summary[,1]
 gammas_matrix<-betas_matrix<-NULL
 
 
-T<-100000 # Total MCMC iterations
+T<-30000 # Total MCMC iterations
 # Step 2  
 for (i in 1:T){
   print(i)
