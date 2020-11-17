@@ -19,7 +19,7 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 ## Run Full_ordered_skills.stan
 Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
-                          data=dataList,control=list(max_treedepth=15),cores=1)
+                          data=dataList,control=list(max_treedepth=15),cores=4)
 
 #save(Full_ordered_team_abilities_skills,file="Full_ordered_team_abilities_skills")
 
