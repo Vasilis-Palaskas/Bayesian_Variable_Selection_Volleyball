@@ -94,7 +94,7 @@ betas_away<-post_mean_beta_away
 gammas_home_matrix<-gammas_away_matrix<-betas_home_matrix<-betas_away_matrix<-NULL
 
 
-T<-60000 # Total MCMC iterations
+T<-10000 # Total MCMC iterations
 
 # Step 2 
 for (i in 1:T){
