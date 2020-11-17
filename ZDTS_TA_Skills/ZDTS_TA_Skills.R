@@ -52,7 +52,7 @@ data_zdts_skills<-list(n_games=132,
 
 ## Run full_zdts_only_skills.stan
 full_zdts_skills<-stan("full_zdts_skills.stan",
-                             data=data_zdts_skills,chains=1,init_r=0.5,
+                             data=data_zdts_skills,chains=4,init_r=0.5,
                              iter=12000,warmup=2000)### R
 
 # Load the output from the full ZDTS model ("full_zdts_skills")
