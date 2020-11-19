@@ -166,15 +166,15 @@ loo(log_lik_ordered_TA_skills_after_BVS_model4,r_eff=r_eff_log_lik_final_ordered
 DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model4)#338.
 
 ###----DIC, WAIC Comparisons
-DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model1)#346.0
-DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model2)#346.0
-DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model3)#346.0
-DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model4)#346.0
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model1)#
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model2)#
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model3)#
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS_model4)#
 
-waic(log_lik_ordered_TA_skills_after_BVS_model1)####296.5
-waic(log_lik_ordered_TA_skills_after_BVS_model2)####296.5
-waic(log_lik_ordered_TA_skills_after_BVS_model3)####296.5
-waic(log_lik_ordered_TA_skills_after_BVS_model4)####296.5
+waic(log_lik_ordered_TA_skills_after_BVS_model1)####
+waic(log_lik_ordered_TA_skills_after_BVS_model2)####
+waic(log_lik_ordered_TA_skills_after_BVS_model3)####
+waic(log_lik_ordered_TA_skills_after_BVS_model4)####
 
 ###### SECTION 4.4 Final chosen ordered logistic model with team abilities
 ### MCMC Posterior Summary Plots
@@ -193,6 +193,21 @@ model_data<-list(Y=dataList$Y,X=X_ordered_TA_Skills,n_teams=12,
 
 ordered_TA_skills_after_BVS<-stan("Ordered_TA_Skills_after_BVS.stan",iter=14000, warmup=2000,chains=2,thin=2,
                                          data=model_data,control=list(max_treedepth=15),cores=2)
+save(ordered_TA_skills_after_BVS,file="ordered_TA_skills_after_BVS")
+### Bayesian Information Criteria 
+
+####Extraction of the log-likelihood, deviance quantities
+
+deviance_ordered_TA_skills_after_BVS<-extract(ordered_TA_skills_after_BVS,pars="dev")$dev
+log_lik_ordered_TA_skills_after_BVS<- extract_log_lik(ordered_TA_skills_after_BVS)
+r_eff_log_lik_ordered_TA_skills_after_BVS<- relative_eff(exp(ordered_TA_skills_after_BVS),chain_id=rep(1:2,each=6000))
+
+##WAIC, LOO, DIC
+
+waic(log_lik_ordered_TA_skills_after_BVS)####258.8
+loo(log_lik_ordered_TA_skills_after_BVS)#260.0
+loo(log_lik_ordered_skills_after_BVS,r_eff=r_eff_log_lik_ordered_skills_after_BVS)#for model with proper thinning 379,9
+DIC_Gelman(deviance_ordered_TA_skills_after_BVS)#249.8
 
 ### MCMC Posterior Summary Plots
 
