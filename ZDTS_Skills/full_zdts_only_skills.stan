@@ -69,13 +69,13 @@ transformed parameters {
   lambda1_star= exp(mu+X_home * beta_home+home);          
   lambda2_star= exp(mu+X_away * beta_away);  
   for (g in 1:n_games) {
-    if (lambda1_star[g]>150.0){
-      lambda1[g]=150.0;
+    if (lambda1_star[g]>100.0){
+      lambda1[g]=100.0;
     } else {
       lambda1[g]=lambda1_star[g];
     }
-    if (lambda2_star[g]>150.0){
-      lambda2[g]=150.0;
+    if (lambda2_star[g]>100.0){
+      lambda2[g]=100.0;
     } else {
       lambda2[g]=lambda2_star[g];
     }
