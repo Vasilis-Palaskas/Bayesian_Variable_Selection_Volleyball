@@ -89,7 +89,7 @@ ordered_skills_after_BVS_model4<-stan("ordered_skills_after_BVS.stan",iter=14000
                                       data=model_data,control=list(max_treedepth=15),cores=2)
 
 
-##Table 3 :Information Criteria
+ ##Table 3 :Information Criteria
 # Calculation of the DIC (Gelman,2004)
 DIC_Gelman<-function(dev){
   res<-mean(dev)+0.5*var(dev)
@@ -157,7 +157,17 @@ loo(log_lik_ordered_skills_after_BVS_model4)#for model with thin=1
 loo(log_lik_ordered_skills_after_BVS_model4,r_eff=r_eff_log_lik_ordered_skills_after_BVS_model4)#for model with proper thinning 379,9
 DIC_Gelman(deviance_ordered_skills_after_BVS_model4)
 
+# WAIC, DIC
+# 
+waic(log_lik_ordered_skills_after_BVS_model1)####273.2
+waic(log_lik_ordered_skills_after_BVS_model2)####273.2
+waic(log_lik_ordered_skills_after_BVS_model3)####273.2
+waic(log_lik_ordered_skills_after_BVS_model4)####273.2
 
+DIC_Gelman(deviance_ordered_skills_after_BVS_model1)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model2)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model3)
+DIC_Gelman(deviance_ordered_skills_after_BVS_model4)
 
 ###### SECTION 4.4 Final chosen ordered logistic model with team abilities
 skill_events<-dataList$X
@@ -172,6 +182,22 @@ model_data<-list(Y=dataList$Y,X=X_ordered_Skills,n_teams=12,
 
 ordered_skills_after_BVS<-stan("ordered_skills_after_BVS.stan",iter=14000, warmup=2000,chains=2,thin=2,
                                       data=model_data,control=list(max_treedepth=15),cores=2)
+
+save(ordered_skills_after_BVS,file="ordered_skills_after_BVS")
+### Bayesian Information Criteria 
+
+####Extraction of the log-likelihood, deviance quantities
+
+deviance_ordered_skills_after_BVS<-extract(ordered_skills_after_BVS,pars="dev")$dev
+log_lik_ordered_skills_after_BVS<- extract_log_lik(ordered_skills_after_BVS)
+r_eff_log_lik_ordered_skills_after_BVS<- relative_eff(exp(ordered_skills_after_BVS),chain_id=rep(1:2,each=6000))
+
+##WAIC, LOO, DIC
+
+waic(log_lik_ordered_skills_after_BVS)####247.5
+loo(log_lik_ordered_skills_after_BVS)#for model with thin=1
+loo(log_lik_ordered_skills_after_BVS,r_eff=r_eff_log_lik_ordered_skills_after_BVS)#for model with proper thinning 379,9
+DIC_Gelman(deviance_ordered_skills_after_BVS)#245.2
 
 ### MCMC Posterior Summary Plots
 
