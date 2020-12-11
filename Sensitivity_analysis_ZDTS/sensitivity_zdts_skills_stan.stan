@@ -63,24 +63,24 @@ transformed parameters {
   
   vector[n_games]   lambda1_star;
   vector[n_games]   lambda2_star; 
-  vector[n_games]   lambda1;
-  vector[n_games]   lambda2;
+  //vector[n_games]   lambda1;
+ // vector[n_games]   lambda2;
   
   // Creation of linear predictor
   lambda1_star= exp(mu+X_home * beta_home+home);          
   lambda2_star= exp(mu+X_away * beta_away);  
-  for (g in 1:n_games) {
-    if (lambda1_star[g]>150.0){
-      lambda1[g]=150.0;
-    } else {
-      lambda1[g]=lambda1_star[g];
-    }
-    if (lambda2_star[g]>150.0){
-      lambda2[g]=150.0;
-    } else {
-      lambda2[g]=lambda2_star[g];
-    }
-  }
+  // for (g in 1:n_games) {
+  //   if (lambda1_star[g]>150.0){
+  //     lambda1[g]=150.0;
+  //   } else {
+  //     lambda1[g]=lambda1_star[g];
+ //   }
+  //  if (lambda2_star[g]>150.0){
+  //     lambda2[g]=150.0;
+  //  } else {
+  //     lambda2[g]=lambda2_star[g];
+  //   }
+  // }
 }
 
 model {
@@ -103,21 +103,21 @@ model {
   
   //likelihood-systematic component
   for (g in 1:n_games) {
-    target+=skellam_without_lpmf(sets_diff[g]|lambda1[g],lambda2[g]) ;
+    target+=skellam_without_lpmf(sets_diff[g]|lambda1_star[g],lambda2_star[g]) ;
   }
   
 }
 generated quantities{
-  vector[n_games] log_lik;
+ // vector[n_games] log_lik;
   vector[n_games] log_lik_star;
-  real dev;
+  //real dev;
   real dev_star;
 
   dev_star=0;
-  dev=0;
+//  dev=0;
     for (g in 1:n_games) {
-        log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1[g],lambda2[g]) ;
-        dev=dev-2*log_lik[g];
+      //  log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1[g],lambda2[g]) ;
+       // dev=dev-2*log_lik[g];
         log_lik_star[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
         dev_star=dev_star-2*log_lik_star[g];
 

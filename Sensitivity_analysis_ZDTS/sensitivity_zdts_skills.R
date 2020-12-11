@@ -5,18 +5,18 @@ library(coda)
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
  setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_Skills")
 
-# Load the properly prepared data for both home and away skill events as well as
-# both home and away teams in each match
-load("X_home")
-load("X_away")
-load("data_zdts_skills")
+ # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+ # Load the properly prepared data for both home and away skill events as well as
+ # both home and away teams in each match
+ load("X_home")
+ load("X_away")
+ load("data_zdts_skills")
 # 
 # load("X_home")
 # load("X_away")
 # load("data_zdts_skills")
 #Model matrices for home and away sets scored, respectively
-X_home<-data_zdts_skills[,c(1:17)]
-X_away<-data_zdts_skills[,c(18:34)]
+
 
 #Rename the columns
 colnames(X_home)<-c("home_perfect_serve","home_very_good_serve","home_failed_serve",
@@ -152,24 +152,24 @@ transformed parameters {
   
   vector[n_games]   lambda1_star;
   vector[n_games]   lambda2_star; 
-  vector[n_games]   lambda1;
-  vector[n_games]   lambda2;
+  //vector[n_games]   lambda1;
+ // vector[n_games]   lambda2;
   
   // Creation of linear predictor
   lambda1_star= exp(mu+X_home * beta_home+home);          
   lambda2_star= exp(mu+X_away * beta_away);  
-  for (g in 1:n_games) {
-    if (lambda1_star[g]>150.0){
-      lambda1[g]=150.0;
-    } else {
-      lambda1[g]=lambda1_star[g];
-    }
-    if (lambda2_star[g]>150.0){
-      lambda2[g]=150.0;
-    } else {
-      lambda2[g]=lambda2_star[g];
-    }
-  }
+  // for (g in 1:n_games) {
+  //   if (lambda1_star[g]>150.0){
+  //     lambda1[g]=150.0;
+  //   } else {
+  //     lambda1[g]=lambda1_star[g];
+ //   }
+  //  if (lambda2_star[g]>150.0){
+  //     lambda2[g]=150.0;
+  //  } else {
+  //     lambda2[g]=lambda2_star[g];
+  //   }
+  // }
 }
 
 model {
@@ -180,8 +180,7 @@ model {
     
   }
   
-  //Priors
-  
+
   //Priors
   target+=normal_lpdf(beta_home|0,c*1);
   target+=normal_lpdf(beta_away|0,c*1);
@@ -192,24 +191,23 @@ model {
   
   //likelihood-systematic component
   for (g in 1:n_games) {
-    target+=skellam_without_lpmf(sets_diff[g]|lambda1[g],lambda2[g]) ;
+    target+=skellam_without_lpmf(sets_diff[g]|lambda1_star[g],lambda2_star[g]) ;
   }
   
 }
 generated quantities{
-  vector[n_games] log_lik;
+ // vector[n_games] log_lik;
   vector[n_games] log_lik_star;
-  real dev;
+  //real dev;
   real dev_star;
 
   dev_star=0;
-  dev=0;
+//  dev=0;
     for (g in 1:n_games) {
-        log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1[g],lambda2[g]) ;
-        dev=dev-2*log_lik[g];
+      //  log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1[g],lambda2[g]) ;
+       // dev=dev-2*log_lik[g];
         log_lik_star[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
         dev_star=dev_star-2*log_lik_star[g];
-
   }
 
   //overall=attack-defense;
@@ -224,18 +222,18 @@ generated quantities{
 
 # c=2
 full_zdts_only_skills_c_2<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_2,thin=1,chains=2,
-                             iter=10000,warmup=2000,seed="12345",init_r=1)
+                             iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
 
 
 
 
 # c=5
 full_zdts_only_skills_c_5<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_5,thin=1,chains=2,
-                                iter=10000,warmup=2000,seed="12345",init_r=1)
+                                iter=10000,warmup=2000,seed="12345",init_r=1)#15980/16000=99.8%divergent transitions after warmup
 
 # c=10
 full_zdts_only_skills_c_10<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_10,thin=1,chains=2,
-                                 iter=10000,warmup=2000,seed="12345",init_r=1)
+                                 iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
 
 
 
@@ -257,8 +255,8 @@ dev_full_zdts_only_skills_c_2$dev_star
 
 mean(dev_full_zdts_only_skills_c_2$dev)#
 sd(dev_full_zdts_only_skills_c_2$dev)#
-mean(dev_full_zdts_only_skills_c_2$dev_star)#
-sd(dev_full_zdts_only_skills_c_2$dev_star)#
+mean(dev_full_zdts_only_skills_c_2$dev_star)#206.15
+sd(dev_full_zdts_only_skills_c_2$dev_star)#8.21
 #c=5
 dev_full_zdts_only_skills_c_5<-extract(full_zdts_only_skills_c_5,pars="dev")
 dev_full_zdts_only_skills_c_5$dev
@@ -269,8 +267,8 @@ dev_full_zdts_only_skills_c_5$dev_star
 
 mean(dev_full_zdts_only_skills_c_5$dev)#
 sd(dev_full_zdts_only_skills_c_5$dev)#
-mean(dev_full_zdts_only_skills_c_5$dev_star)#
-sd(dev_full_zdts_only_skills_c_5$dev_star)#
+mean(dev_full_zdts_only_skills_c_5$dev_star)#207.4
+sd(dev_full_zdts_only_skills_c_5$dev_star)# 8.55
 #Model c=10
 dev_full_zdts_only_skills_c_10<-extract(full_zdts_only_skills_c_10,pars="dev")
 dev_full_zdts_only_skills_c_10$dev
@@ -280,8 +278,8 @@ dev_full_zdts_only_skills_c_10$dev_star
 
 mean(dev_full_zdts_only_skills_c_10$dev)#
 sd(dev_full_zdts_only_skills_c_10$dev)#
-mean(dev_full_zdts_only_skills_c_10$dev_star)#
-sd(dev_full_zdts_only_skills_c_10$dev_star)#
+mean(dev_full_zdts_only_skills_c_10$dev_star)#207.29
+sd(dev_full_zdts_only_skills_c_10$dev_star)# 8.10
 #Model c=20
 dev_sensit_att_def_c_20<-extract(ZDTS_paper_att_def_c_20,pars="dev")
 dev_sensit_att_def_c_20$dev
@@ -362,9 +360,8 @@ plot_beta_away_posterior_full_zdts_only_skills_c_2<-mcmc_intervals(beta_away_ful
 ##----------------------------------------------------------------------------------------
 ##-------3) Count the iterations that lambda1_star,lambda2_star exceedes  the maximum therehold
 ##----------   across several prior variances (c=2,5,10)
-sum(lambda1_star>150)/(dim(lambda1_star)[1]*dim(lambda1_star)[2])
-sum(lambda2_star>150)/(dim(lambda2_star)[1]*dim(lambda2_star)[2])
-
+percentage_lambda1_star_above_threshold<-sum(lambda1_star>150)/length(lambda1_star)
+percentage_lambda2_star_above_threshold<-
 ###-------------------------Leonardo Plots
 
 #----------------------------
