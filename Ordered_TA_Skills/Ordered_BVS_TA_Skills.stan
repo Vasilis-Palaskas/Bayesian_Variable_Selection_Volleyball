@@ -14,15 +14,22 @@ data {
 
 parameters { 
   vector[K] betas;  // parameters of candidate variables 
-  ordered[ncat-1] temp_Intercept;  // temporary thresholds 
   real gen_abil_raw[11]; // general ability parameters (12 teams in total)
 } 
 
 
 
 transformed parameters { 
+  ordered[ncat-1] temp_Intercept;  // temporary thresholds
   vector[K] gb; 
   vector[12]   gen_abil;
+  vector[ncat-1] delta;            // delta parameters in the threshold prior
+   delta[1] = 0;
+  
+  for (k in 2:(ncat-1)){
+    temp_Intercept[k] = temp_Intercept[k-1] + delta[k];   // threshold transformation
+  }
+  
   for (j in 1:K){
     gb[j]=gammas[j]*betas[j];
   }
@@ -38,7 +45,10 @@ model {
   vector[N] mu = X * gb+(gen_abil[home_team]-gen_abil[away_team]);
   
   // Priors of all parameters except for the candidate variables' parameters
-  target += normal_lpdf(temp_Intercept | 0, 10); 
+  target += normal_lpdf(temp_Intercept[1] | 0, 10);   // first threshold prior
+  for (k in 2:(ncat-1)){
+    target+= lognormal_lpdf(delta[k]|0, 10);          // delta prior
+    } 
   target += normal_lpdf(gen_abil |0,10);
 
   

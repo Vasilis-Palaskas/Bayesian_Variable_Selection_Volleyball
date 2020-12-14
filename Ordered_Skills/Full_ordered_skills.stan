@@ -63,16 +63,25 @@ transformed data {
 
 parameters { 
   vector[Kc] beta;  // population-level effects 
-  ordered[ncat-1] temp_Intercept;  // temporary thresholds 
-} 
-
+}
+transformed parameters{
+  ordered[ncat-1] temp_Intercept;  // temporary thresholds
+   vector[ncat-1] delta;           // delta parameters in the threshold prior;
+   
+   delta[1] = 0;                   // delta initialization
+  for (k in 2:(ncat-1)){
+    temp_Intercept[k] = temp_Intercept[k-1] + delta[k];  // threshold transformation;
+  }
+}
 
 model { 
   vector[N] mu = Xc * beta;
   
-  
   // priors including all constants 
-  target += normal_lpdf(temp_Intercept | 0, 10); 
+  target += normal_lpdf(temp_Intercept[1] | 0, 10);  // first threshold prior 
+  for (k in 2:(ncat-1)){
+    target+= lognormal_lpdf(delta[k]|0, 10);         // delta prior
+    }
   target+=normal_lpdf(beta|0,10);
   // likelihood including all constants 
   
