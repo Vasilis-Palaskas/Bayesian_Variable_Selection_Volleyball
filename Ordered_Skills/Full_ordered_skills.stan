@@ -64,13 +64,13 @@ transformed data {
 parameters { 
   vector[Kc] beta;  // population-level effects 
   real first_temp_Intercept;        // fake first thresholds
-  vector<lower=0>[ncat-1] delta;   // delta parameters in the threshold prior;
+  vector<lower=0>[ncat-2] delta;   // delta parameters in the threshold prior;
 }
 transformed parameters{
   ordered[ncat-1] temp_Intercept;  // temporary thresholds
    temp_Intercept[1] = first_temp_Intercept;
   for (k in 2:(ncat-1)){
-    temp_Intercept[k] = temp_Intercept[k-1] + delta[k]; // threshold transformation
+    temp_Intercept[k] = temp_Intercept[k-1] + delta[k-1]; // threshold transformation
   }
 }
 
@@ -79,7 +79,7 @@ model {
   
   // priors including all constants 
   target += normal_lpdf(first_temp_Intercept | 0, 10);  // first threshold prior 
-  for (k in 2:(ncat-1)){
+  for (k in 1:(ncat-2)){
     target+= lognormal_lpdf(delta[k]|0, 10);         // delta prior
     }
   target+=normal_lpdf(beta|0,10);
