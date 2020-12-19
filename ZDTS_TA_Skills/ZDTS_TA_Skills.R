@@ -3,8 +3,7 @@ library(rstan)
 library(coda)
 library(shinystan)
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
-setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/ZDTS_TA_Skills")
-
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
 # Load the properly prepared data for both home and away skill events as well as
 # both home and away teams in each match
 load("X_home")
