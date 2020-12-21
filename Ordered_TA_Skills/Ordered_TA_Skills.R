@@ -18,8 +18,8 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 
 ## Run Full_ordered_skills.stan
-Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=1,thin=2,
-                          data=dataList,control=list(max_treedepth=15),cores=1)
+Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=12000, warmup=2000,chains=4,thin=2,
+                          data=dataList,control=list(max_treedepth=15),cores=4)
 
 #save(Full_ordered_team_abilities_skills,file="Full_ordered_team_abilities_skills")
 
@@ -48,7 +48,7 @@ gen_abil_raw<-gen_abil_raw_summary[,1]
 gammas_matrix<-betas_matrix<-NULL
 
 
-T<-100000 # Total MCMC iterations
+T<-30000 # Total MCMC iterations
 # Step 2  
 for (i in 1:T){
   print(i)
