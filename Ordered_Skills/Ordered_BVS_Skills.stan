@@ -13,13 +13,21 @@ data {
 
 parameters { 
   vector[K] betas;  // parameters of candidate variables 
-  ordered[ncat-1] temp_Intercept;  // temporary thresholds 
+  real first_temp_Intercept;        // fake first thresholds
+  vector<lower=0>[ncat-2] delta;   // delta parameters in the threshold prior;
 } 
 
 
 
 transformed parameters { 
-  vector[K] gb; 
+  ordered[ncat-1] temp_Intercept;  // temporary thresholds
+   vector[K] gb;
+   
+  temp_Intercept[1] = first_temp_Intercept;
+  for (k in 2:(ncat-1)){
+    temp_Intercept[k] = temp_Intercept[k-1] + delta[k-1]; // threshold transformation
+  }
+   
   for (j in 1:K){
     gb[j]=gammas[j]*betas[j];
   }
@@ -31,7 +39,10 @@ model {
   vector[N] mu = X * gb;
   
   // Priors of all parameters except for the candidate variables' parameters
-  target += normal_lpdf(temp_Intercept | 0, 10); 
+  target += normal_lpdf(first_temp_Intercept | 0, 10); // first threshold prior 
+  for (k in 1:(ncat-2)){
+    target+= lognormal_lpdf(delta[k]|0, 10);           // delta prior
+    } 
 
   
   // Prior+Pseudoprior of the candidate variables' parameters
