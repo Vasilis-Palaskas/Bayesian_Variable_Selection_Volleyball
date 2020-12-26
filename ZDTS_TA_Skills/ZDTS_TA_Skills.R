@@ -3,8 +3,7 @@ library(rstan)
 library(coda)
 library(shinystan)
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
-setwd("C:/Users/vasileios palaskas/Desktop/BVS_Paper/ZDTS_TA_Skills")
-
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
 # Load the properly prepared data for both home and away skill events as well as
 # both home and away teams in each match
 load("X_home")
@@ -42,6 +41,8 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
                                  (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
+
+
 data_zdts_skills<-list(n_games=132,
 		away_team=as.numeric(data_zdts_skills$away_team),
 			home_team=as.numeric(data_zdts_skills$home_team),

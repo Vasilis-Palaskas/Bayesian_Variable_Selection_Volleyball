@@ -65,10 +65,53 @@ ZDTS_TA_Skills_after_BVS<-stan("ZDTS_TA_Skills_after_BVS.stan",
                        iter=12000,warmup=2000)### R
 
 save(ZDTS_TA_Skills_after_BVS,file="ZDTS_TA_Skills_after_BVS")
+
+
+#### Model Predictive Performance
+##Table 3 :Information Criteria
+# Calculation of the DIC (Gelman,2004)
+DIC_Gelman<-function(dev){
+  res<-mean(dev)+0.5*var(dev)
+  return(res)
+}
+
+
+
+
+
+####Extraction of the log-likelihood, deviance quantities
+
+deviance_ZDTS_TA_Skills_after_BVS<-extract(ZDTS_TA_Skills_after_BVS,pars="dev")$dev
+log_lik_ZDTS_TA_Skills_after_BVS<- extract_log_lik(ZDTS_TA_Skills_after_BVS)
+r_eff_log_lik_ZDTS_TA_Skills_after_BVS<- relative_eff(exp(log_lik_ZDTS_TA_Skills_after_BVS),chain_id=rep(1:2,each=10000))
+
+##WAIC, LOO, DIC
+
+waic(log_lik_ZDTS_TA_Skills_after_BVS)####267.4
+loo(log_lik_ZDTS_TA_Skills_after_BVS)#270.5
+loo(log_lik_ZDTS_TA_Skills_after_BVS,r_eff=r_eff_log_lik_ZDTS_TA_Skills_after_BVS)#for model with proper thinning 379,9
+DIC_Gelman(deviance_ZDTS_TA_Skills_after_BVS)#265.6
+
+
+
+
+
+
 ### MCMC Posterior Summary Plots
 
 
 sims <- rstan::extract(ordered_TA_skills_after_BVS)
+
+
+# mu, home
+mu <- sims$mu
+home <- sims$home
+
+mu_hat <- apply(home,2, median)
+mu_sd <- apply(home,2, sd)
+
+home_hat <- apply(home,2, median)
+home_sd <- apply(home,2, sd)
 ## coefplot for team abilities
 teams <- c("Ethnikos Alexandroupolis", "Pamvochaikos",
            "Iraklis Petosfairishs",   "Kyzikos Peramou",   
@@ -153,3 +196,31 @@ coefplot( rev(beta_away_hat[ord]),
           main="Away skill events (estim. +/- 2 s.e.)\n", 
           cex.var=1.5, mar=c(1,6,4.5,1),
           cex.main=1.3,pch=16, cex=2, col="blue")
+
+
+
+
+
+
+### MCMC Areas for both home and away teams' skill events
+
+plot_home_skill_events<-	mcmc_areas(beta_home,
+                                    prob = 0.95,point_est = c( "mean"))+ggtitle("Home Teams' Skill Events")+
+  scale_x_continuous(lim=c(0,10))+
+  theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),  
+        axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
+        axis.title.y = element_text( size = 20, angle = 90, hjust = .5, vjust= 0),
+        plot.title  =element_text( size = 23),axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),axis.line.y=element_blank())
+
+plot_away_skill_events<-mcmc_areas(beta_away,
+                                   prob = 0.95,point_est = c( "mean"))+ggtitle("Away Teams' Skill Events")+
+  theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
+        axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
+        axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
+        axis.title.y = element_text( size = 20, angle = 90, hjust = .5, vjust= 0),
+        plot.title  =element_text( size = 23))
+
+grid.arrange(plot_home_skill_events,plot_away_skill_events,ncol=2)
+
+ggarrange(plot_home_skill_events,plot_away_skill_events,nrow=2,ncol=2)

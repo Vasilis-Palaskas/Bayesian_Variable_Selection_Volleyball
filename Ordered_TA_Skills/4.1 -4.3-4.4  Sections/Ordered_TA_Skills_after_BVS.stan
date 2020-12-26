@@ -88,6 +88,8 @@ model {
   // priors including all constants 
   target += normal_lpdf(temp_Intercept | 0, 10); 
   target+=normal_lpdf(beta|0,10);
+    target += normal_lpdf(gen_abil| 0, 10); 
+
   // likelihood including all constants 
   
   for (n in 1:N) {
@@ -101,7 +103,7 @@ generated quantities {
   vector[N] log_lik;
   real dev;
   int y_pred[N];
-  vector[N] mu = X * beta;
+  vector[N] mu = X * beta+gen_abil[home_team]-gen_abil[away_team];
   dev=0;
   for (i in 1:N) {
     log_lik[i] = ordered_logistic_lpmf(Y[i] | mu[i], temp_Intercept);
