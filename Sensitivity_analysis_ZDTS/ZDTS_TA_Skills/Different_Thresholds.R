@@ -329,6 +329,11 @@ sd(dev_full_zdts_skills_c_5_different_thresholds$dev)# 9.1
 mean(dev_full_zdts_skills_c_10_different_thresholds$dev)#211.4
 sd(dev_full_zdts_skills_c_10_different_thresholds$dev)# 9.02
 
+
+min(dev_full_zdts_skills_c_1_different_thresholds$dev)#
+min(dev_full_zdts_skills_c_2_different_thresholds$dev)
+min(dev_full_zdts_skills_c_5_different_thresholds$dev)
+min(dev_full_zdts_skills_c_10_different_thresholds$dev)
 #---- 2)Sensitivity Analysis:  
 rstan::check_divergences(full_zdts_skills_c_1_different_thresholds)#0%
 rstan::check_divergences(full_zdts_skills_c_2_different_thresholds)#0%
