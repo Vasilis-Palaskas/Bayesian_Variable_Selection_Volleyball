@@ -13,20 +13,6 @@ library(bayesplot)
  load("data_zdts_skills")
 
 
-
-#Rename the columns
- colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
-                         "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
-                         "(Home) block net violation","(Home) failed block","(Home) failed setting")
- 
- colnames(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
-                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
-                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
-                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
- 
- 
-
 #### Standardization of the Model Matrices for numerical convenience
 X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)
 
@@ -313,6 +299,8 @@ dev_full_zdts_only_skills_c_10$dev_star
 
 #---- 1)Sensitivity Analysis: Deviances Comparison Table (c=2,5,10)
 mean(dev_full_zdts_only_skills_c_1$dev_star)#204.6
+min(dev_full_zdts_only_skills_c_1$dev_star)#204.6
+
 sd(dev_full_zdts_only_skills_c_1$dev_star)#7.7
 mean(dev_full_zdts_only_skills_c_2$dev_star)#206.2
 sd(dev_full_zdts_only_skills_c_2$dev_star)#8.2
@@ -320,6 +308,12 @@ mean(dev_full_zdts_only_skills_c_5$dev_star)#207.5
 sd(dev_full_zdts_only_skills_c_5$dev_star)# 8.6
 mean(dev_full_zdts_only_skills_c_10$dev_star)#207.3
 sd(dev_full_zdts_only_skills_c_10$dev_star)# 8.1
+
+
+min(dev_full_zdts_only_skills_c_1$dev_star)#204.6
+min(dev_full_zdts_only_skills_c_2$dev_star)#204.6
+min(dev_full_zdts_only_skills_c_5$dev_star)#204.6
+min(dev_full_zdts_only_skills_c_10$dev_star)#204.6
 
 #---- 2)Sensitivity Analysis:  
 rstan::check_divergences(full_zdts_only_skills_c_1)#97.0%

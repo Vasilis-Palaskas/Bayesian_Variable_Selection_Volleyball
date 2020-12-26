@@ -61,7 +61,7 @@ data_zdts_only_skills<-list(n_games=data_zdts_skills$N,
 
 ## Run full_zdts_only_skills.stan
 full_zdts_only_skills<-stan(file.choose(),
-                             data=data_zdts_only_skills,chains=1,init_r=0.5,
+                             data=data_zdts_only_skills,chains=4,init_r=0.5,
                              iter=12000,warmup=2000)### R
 
 save(full_zdts_only_skills,file="full_zdts_only_skills")

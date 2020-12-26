@@ -18,8 +18,8 @@ dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
 
 
 ## Run Full_ordered_skills.stan
-Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=1,thin=2,
-                          data=dataList,control=list(max_treedepth=15),cores=1)
+Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=4,thin=2,
+                          data=dataList,control=list(max_treedepth=15),cores=4)
 
 save(Full_ordered_skills,file="Full_ordered_skills")
 # Load the results from the full ordered logistic model (with all candidate variables).
@@ -115,13 +115,17 @@ final_posterior_values_betas<-matrix(betas_matrix[(dataList$K*warmup+1):length(b
                                      nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
 # Prepare a dataframe by assigning in the variables names the corresponding column names.
 df_final_posterior_values_gammas<-as.data.frame(final_posterior_values_gammas)
+names(dataList$X)<-c("perfect serve","very good serve","failed serve"," perfect pass","
+                                  very good pass","poor pass","failed pass","perfect att1","blocked att1",
+                     "failed att1","perfect att2","blocked att2","failed att2","perfect block",
+                     "block net violation","failed block","failed setting")
 colnames(df_final_posterior_values_gammas)<-names(dataList$X)
 # Step 8: Obtain the posterior inclusion probabilities for each one candidate variable
 posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),3)
 print(posterior_inclusion_probabilities)
 
 
-# MCMC Convergence diagnostics
+### MCMC Convergence Checking
 # 
 # a) Firstly, for gammas and betas indicators
 # 
@@ -134,59 +138,6 @@ autocorr.plot(mcmc_final_posterior_values_betas)
 traceplot(mcmc_final_posterior_values_gammas)
 traceplot(mcmc_final_posterior_values_betas)
 cumsumplot(mcmc_final_posterior_values_gammas)
-
-## Ergodic plots
-
-par(mfrow=c(4,4))
-cum_gamma1<- cumsum(final_posterior_values_gammas[,1])/c(1:length(final_posterior_values_gammas[,1]))
-plot(cum_gamma1,type="l",col="blue",ylab="gamma1",xlab="Iterations")
-
-cum_gamma2<- cumsum(final_posterior_values_gammas[,2])/c(1:length(final_posterior_values_gammas[,2]))
-plot(cum_gamma1,type="l",col="blue",ylab="gamma2",xlab="Iterations")
-
-
-# Ergodic plots for team ability parameters
-
-par(mfrow=c(3,4))
-cum_team_abil1<-cumsum(team_abil_final_ordered_logistic[,1])/c(1:length(team_abil_final_ordered_logistic[,1]))
-plot(cum_team_abil1,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[1])
-
-cum_team_abil2<-cumsum(team_abil_final_ordered_logistic[,2])/c(1:length(team_abil_final_ordered_logistic[,2]))
-plot(cum_team_abil2,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[2])
-
-cum_team_abil3<-cumsum(team_abil_final_ordered_logistic[,3])/c(1:length(team_abil_final_ordered_logistic[,3]))
-plot(cum_team_abil3,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[3])
-
-cum_team_abil4<-cumsum(team_abil_final_ordered_logistic[,4])/c(1:length(team_abil_final_ordered_logistic[,4]))
-plot(cum_team_abil4,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[4])
-
-cum_team_abil5<-cumsum(team_abil_final_ordered_logistic[,5])/c(1:length(team_abil_final_ordered_logistic[,5]))
-plot(cum_team_abil4,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[5])
-
-cum_team_abil6<-cumsum(team_abil_final_ordered_logistic[,6])/c(1:length(team_abil_final_ordered_logistic[,6]))
-plot(cum_team_abil6,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[6])
-
-cum_team_abil7<-cumsum(team_abil_final_ordered_logistic[,7])/c(1:length(team_abil_final_ordered_logistic[,7]))
-plot(cum_team_abil7,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[7])
-
-cum_team_abil8<-cumsum(team_abil_final_ordered_logistic[,3])/c(1:length(team_abil_final_ordered_logistic[,8]))
-plot(cum_team_abil8,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[8])
-
-cum_team_abil9<-cumsum(team_abil_final_ordered_logistic[,9])/c(1:length(team_abil_final_ordered_logistic[,9]))
-plot(cum_team_abil9,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[9])
-
-cum_team_abil10<-cumsum(team_abil_final_ordered_logistic[,10])/c(1:length(team_abil_final_ordered_logistic[,10]))
-plot(cum_team_abil10,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[10])
-
-cum_team_abil11<-cumsum(team_abil_final_ordered_logistic[,11])/c(1:length(team_abil_final_ordered_logistic[,11]))
-plot(cum_team_abil11,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[11])
-
-cum_team_abil12<-cumsum(team_abil_final_ordered_logistic[,12])/c(1:length(team_abil_final_ordered_logistic[,12]))
-plot(cum_team_abil12,type="l",col="blue",xlab="Iterations",ylab=colnames(team_abil_final_ordered_logistic)[12])
-
-
-
-
 
 
 ## NOTE (Leo_Egidi): I ran the model with more chains to check the Gelman-Rubin statistic

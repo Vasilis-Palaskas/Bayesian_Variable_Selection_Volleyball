@@ -330,6 +330,10 @@ sd(dev_full_zdts_skills_c_5$dev_star)# 9.3
 mean(dev_full_zdts_skills_c_10$dev_star)#204.8
 sd(dev_full_zdts_skills_c_10$dev_star)# 9.4
 
+min(dev_full_zdts_skills_c_1$dev_star)#
+min(dev_full_zdts_skills_c_2$dev_star)
+min(dev_full_zdts_skills_c_5$dev_star)
+min(dev_full_zdts_skills_c_10$dev_star)
 #---- 2)Sensitivity Analysis:  
 rstan::check_divergences(full_zdts_skills_c_1)#99.7%
 rstan::check_divergences(full_zdts_skills_c_2)#99.8
