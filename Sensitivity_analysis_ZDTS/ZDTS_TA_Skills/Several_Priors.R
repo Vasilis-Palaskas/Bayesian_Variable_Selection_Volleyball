@@ -24,13 +24,13 @@ for (i in 1:dim(X_home)[2]){
   X_away_std[,i]<-scale(X_away[,i])
 }
 
-colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
+                        "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                         "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
                         "(Home) block net violation","(Home) failed block","(Home) failed setting")
 
-colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
-                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
+                        " (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
@@ -74,9 +74,28 @@ data_zdts_skills_c_10<-list(c=10,n_games=132,
                             X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
                             home_sets=data_zdts_skills$home_sets,
                             away_sets=data_zdts_skills$away_sets)
-
-
-
+###-----Future meeting 7 Actions a)
+data_zdts_skills_c_1_20<-list(c=1/20,n_games=length(data_zdts_skills$home_sets),
+                           away_team=as.numeric(data_zdts_skills$away_team),
+                           home_team=as.numeric(data_zdts_skills$home_team),
+                           n_teams=data_zdts_skills$n_teams,
+                           X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                           home_sets=data_zdts_skills$home_sets,
+                           away_sets=data_zdts_skills$away_sets)
+data_zdts_skills_c_1_10<-list(c=1/10,n_games=length(data_zdts_skills$home_sets),
+                              away_team=as.numeric(data_zdts_skills$away_team),
+                              home_team=as.numeric(data_zdts_skills$home_team),
+                              n_teams=data_zdts_skills$n_teams,
+                              X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                              home_sets=data_zdts_skills$home_sets,
+                              away_sets=data_zdts_skills$away_sets)
+data_zdts_skills_c_1_2<-list(c=1/2,n_games=length(data_zdts_skills$home_sets),
+                              away_team=as.numeric(data_zdts_skills$away_team),
+                              home_team=as.numeric(data_zdts_skills$home_team),
+                              n_teams=data_zdts_skills$n_teams,
+                              X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                              home_sets=data_zdts_skills$home_sets,
+                              away_sets=data_zdts_skills$away_sets)
 sensit_betas_zdts_TA_skills.stan=
   "
 functions {
@@ -220,6 +239,8 @@ generated quantities{
 "
 
 # Extraction of the candidate models' deviances (Table 2)
+
+
 # c=1
 full_zdts_skills_c_1<-stan(model_code=sensit_betas_zdts_TA_skills.stan,data=data_zdts_skills_c_1,thin=1,chains=2,
                            iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
@@ -239,7 +260,23 @@ full_zdts_skills_c_10<-stan(model_code=sensit_betas_zdts_TA_skills.stan,data=dat
                                  iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
 
 
+##---Future meeting 7 Actions a)
 
+# c=1/20
+full_zdts_skills_c_1_20<-stan(model_code=sensit_betas_zdts_TA_skills.stan,
+                           data=data_zdts_skills_c_1_20,thin=1,chains=2,
+                           iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+
+
+# c=1/10
+full_zdts_skills_c_1_10<-stan(model_code=sensit_betas_zdts_TA_skills.stan,
+                              data=data_zdts_skills_c_1_10,thin=1,chains=1,
+                              iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+
+# c=1/2
+full_zdts_skills_c_1_2<-stan(model_code=sensit_betas_zdts_TA_skills.stan,
+                            data=data_zdts_skills_c_1_2,thin=1,chains=1,
+                            iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
 
 
 
@@ -249,6 +286,10 @@ save(full_zdts_skills_c_2,file="full_zdts_skills_c_2")
 save(full_zdts_skills_c_5,file="full_zdts_skills_c_5")
 save(full_zdts_skills_c_10,file="full_zdts_skills_c_10")
 
+
+save(full_zdts_skills_c_1_20,file="full_zdts_skills_c_1_20")
+save(full_zdts_skills_c_1_10,file="full_zdts_skills_c_1_10")
+save(full_zdts_skills_c_1_2,file="full_zdts_skills_c_1_2")
 # launch_shinystan(full_zdts_skills_c_1)# Not converged
 # launch_shinystan(full_zdts_skills_c_2)# Not converged
 # launch_shinystan(full_zdts_skills_c_5)# Not converged
@@ -259,6 +300,17 @@ save(full_zdts_skills_c_10,file="full_zdts_skills_c_10")
 ##----------------------------------------------------------------------------------------
 ##-------2) Compare the Posterior distributions of betas across several values of c=2,5,10
 
+beta_home_full_data_zdts_skills_c_1_20<-extract(full_data_zdts_skills_c_1_20,pars="beta_home")
+beta_away_full_data_zdts_skills_c_1_20<-extract(full_data_zdts_skills_c_1_20,pars="beta_away")
+
+beta_home_full_data_zdts_skills_c_1_10<-extract(full_data_zdts_skills_c_1_10,pars="beta_home")
+beta_away_full_data_zdts_skills_c_1_10<-extract(full_data_zdts_skills_c_1_10,pars="beta_away")
+
+beta_home_full_data_zdts_skills_c_1_2<-extract(full_data_zdts_skills_c_1_2,pars="beta_home")
+beta_away_full_data_zdts_skills_c_1_2<-extract(full_data_zdts_skills_c_1_2,pars="beta_away")
+
+beta_home_full_data_zdts_skills_c_1<-extract(full_data_zdts_skills_c_1,pars="beta_home")
+beta_away_full_data_zdts_skills_c_1<-extract(full_data_zdts_skills_c_1,pars="beta_away")
 
 beta_home_full_data_zdts_skills_c_1<-extract(full_data_zdts_skills_c_1,pars="beta_home")
 beta_away_full_data_zdts_skills_c_1<-extract(full_data_zdts_skills_c_1,pars="beta_away")
@@ -274,6 +326,18 @@ beta_away_full_data_zdts_skills_c_10<-extract(full_data_zdts_skills_c_10,pars="b
 
 
 ##-----Convert them to dataframes in terms of our convenience
+beta_home_full_data_zdts_skills_c_1_20<-as.data.frame(beta_home_full_data_zdts_skills_c_1_20)
+beta_away_full_data_zdts_skills_c_1_20<-as.data.frame(beta_away_full_data_zdts_skills_c_1_20)
+
+beta_home_full_data_zdts_skills_c_1_10<-as.data.frame(beta_home_full_data_zdts_skills_c_1_10)
+beta_away_full_data_zdts_skills_c_1_10<-as.data.frame(beta_away_full_data_zdts_skills_c_1_10)
+
+beta_home_full_data_zdts_skills_c_1_2<-as.data.frame(beta_home_full_data_zdts_skills_c_1_2)
+beta_away_full_data_zdts_skills_c_1_2<-as.data.frame(beta_away_full_data_zdts_skills_c_1_2)
+
+beta_home_full_data_zdts_skills_c_1<-as.data.frame(beta_home_full_data_zdts_skills_c_1)
+beta_away_full_data_zdts_skills_c_1<-as.data.frame(beta_away_full_data_zdts_skills_c_1)
+
 beta_home_full_data_zdts_skills_c_1<-as.data.frame(beta_home_full_data_zdts_skills_c_1)
 beta_away_full_data_zdts_skills_c_1<-as.data.frame(beta_away_full_data_zdts_skills_c_1)
 beta_home_full_data_zdts_skills_c_2<-as.data.frame(beta_home_full_data_zdts_skills_c_2)
@@ -301,6 +365,15 @@ colnames(beta_away_full_data_zdts_skills_c_2)<-colnames(beta_away_full_data_zdts
 
 ##---------------------------------------------------------
 ##-------1) Deviances Comparison across several values of c
+#----c=1/20
+dev_full_zdts_skills_c_1_20<-extract(full_zdts_skills_c_1_20,pars="dev_star")
+dev_full_zdts_skills_c_1_20$dev_star
+
+dev_full_zdts_skills_c_1_10<-extract(full_zdts_skills_c_1_10,pars="dev_star")
+dev_full_zdts_skills_c_1_10$dev_star
+
+dev_full_zdts_skills_c_1_2<-extract(full_zdts_skills_c_1_2,pars="dev_star")
+dev_full_zdts_skills_c_1_2$dev_star
 #----c=1
 dev_full_zdts_skills_c_1<-extract(full_zdts_skills_c_1,pars="dev_star")
 dev_full_zdts_skills_c_1$dev_star
@@ -330,11 +403,18 @@ sd(dev_full_zdts_skills_c_5$dev_star)# 9.3
 mean(dev_full_zdts_skills_c_10$dev_star)#204.8
 sd(dev_full_zdts_skills_c_10$dev_star)# 9.4
 
+###-----Minimum Deviances
+min(dev_full_zdts_skills_c_1_20$dev_star)#
+min(dev_full_zdts_skills_c_1_10$dev_star)#
+min(dev_full_zdts_skills_c_1_2$dev_star)#
 min(dev_full_zdts_skills_c_1$dev_star)#
 min(dev_full_zdts_skills_c_2$dev_star)
 min(dev_full_zdts_skills_c_5$dev_star)
 min(dev_full_zdts_skills_c_10$dev_star)
 #---- 2)Sensitivity Analysis:  
+rstan::check_divergences(full_zdts_skills_c_1_20)#99.7%
+rstan::check_divergences(full_zdts_skills_c_1_10)#99.7%
+rstan::check_divergences(full_zdts_skills_c_1_2)#99.7%
 rstan::check_divergences(full_zdts_skills_c_1)#99.7%
 rstan::check_divergences(full_zdts_skills_c_2)#99.8
 rstan::check_divergences(full_zdts_skills_c_5)#99.9

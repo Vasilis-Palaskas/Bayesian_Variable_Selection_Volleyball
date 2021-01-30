@@ -3,14 +3,14 @@ library(rstan)
 library(coda)
 library(bayesplot)
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
- setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_Skills")
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_Skills")
 
- # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
- # Load the properly prepared data for both home and away skill events as well as
- # both home and away teams in each match
- load("X_home")
- load("X_away")
- load("data_zdts_skills")
+# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+# Load the properly prepared data for both home and away skill events as well as
+# both home and away teams in each match
+load("X_home")
+load("X_away")
+load("data_zdts_skills")
 
 
 #### Standardization of the Model Matrices for numerical convenience
@@ -22,12 +22,12 @@ for (i in 1:dim(X_home)[2]){
 }
 
 colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
-                        " (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+" (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                         "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
                         "(Home) block net violation","(Home) failed block","(Home) failed setting")
 
 colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
-                        "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+" (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
@@ -56,18 +56,18 @@ data_zdts_only_skills_c_5<-list(c=5,n_games=data_zdts_skills$N,
                                 home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 data_zdts_only_skills_c_10<-list(c=10,n_games=data_zdts_skills$N,
-                                n_teams=data_zdts_skills$n_teams,
-                                X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
-                                home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
+                                 n_teams=data_zdts_skills$n_teams,
+                                 X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                                 home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 
 ###------Future Meeting 8 Action a)
 
 
 data_zdts_only_skills_c_1_20<-list(c=1/20,n_games=data_zdts_skills$N,
-                                n_teams=data_zdts_skills$n_teams,
-                                X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
-                                home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
+                                   n_teams=data_zdts_skills$n_teams,
+                                   X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                                   home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 data_zdts_only_skills_c_1_10<-list(c=1/10,n_games=data_zdts_skills$N,
                                    n_teams=data_zdts_skills$n_teams,
@@ -75,10 +75,11 @@ data_zdts_only_skills_c_1_10<-list(c=1/10,n_games=data_zdts_skills$N,
                                    home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 data_zdts_only_skills_c_1_2<-list(c=1/2,n_games=data_zdts_skills$N,
-                                   n_teams=data_zdts_skills$n_teams,
-                                   X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
-                                   home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
-# Define the model implemented for sensitivity analysis
+                                  n_teams=data_zdts_skills$n_teams,
+                                  X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                                  home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
+
+#------- Define the model implemented for sensitivity analysis
 sensit_betas_zdts_skills.stan=
   "functions {
   
@@ -129,40 +130,43 @@ data {
   matrix[n_games,K] X_away;    // design matrix for (away team's) skills
   int <lower=0,upper=3> home_sets[n_games];//0-3 sets can have each team
   int <lower=0,upper=3> away_sets[n_games];//0-3 sets can have each team
-  real<lower=0> c;//c: prior standard deviation multiplicator for betas parameters
+  int<lower=0> c;
 }
 
 parameters {
-  
-  vector[K] beta_home;
-  vector[K] beta_away;
+
+  vector[K] beta_home_raw;
+  vector[K] beta_away_raw;
   real mu;
   real home;
 }
 
 transformed parameters {
-  // Enforce sum-to-zero constraints
-  
+ // Non-centered parameterizations
+  vector[K] beta_home =   beta_home_raw*c;
+  vector[K] beta_away = beta_away_raw*c;
+
   vector[n_games]   lambda1_star;
   vector[n_games]   lambda2_star; 
   //vector[n_games]   lambda1;
- // vector[n_games]   lambda2;
+  //vector[n_games]   lambda2;
   
   // Creation of linear predictor
-  lambda1_star= exp(mu+X_home * beta_home+home);          
+  lambda1_star= exp(mu+home+X_home * beta_home);          
   lambda2_star= exp(mu+X_away * beta_away);  
-  // for (g in 1:n_games) {
-  //   if (lambda1_star[g]>150.0){
-  //     lambda1[g]=150.0;
-  //   } else {
-  //     lambda1[g]=lambda1_star[g];
- //   }
-  //  if (lambda2_star[g]>150.0){
-  //     lambda2[g]=150.0;
-  //  } else {
-  //     lambda2[g]=lambda2_star[g];
-  //   }
-  // }
+  //for (g in 1:n_games) {
+  //  if (lambda1_star[g]>100.0){
+     // lambda1[g]=100.0;
+   // } else {
+    //  lambda1[g]=lambda1_star[g];
+    //}
+    //if (lambda2_star[g]>100.0){
+    //  lambda2[g]=100.0;
+    //} else {
+    //  lambda2[g]=lambda2_star[g];
+    //}
+  //}
+  
 }
 
 model {
@@ -170,42 +174,41 @@ model {
   int    sets_diff[n_games];
   for (g in 1:n_games){
     sets_diff[g]=home_sets[g]-away_sets[g];
-    
   }
   
-
   //Priors
-  target+=normal_lpdf(beta_home|0,c*1);
-  target+=normal_lpdf(beta_away|0,c*1);
+  
+  //Priors
+  target +=normal_lpdf(beta_home_raw | 0, 1);
+  target += normal_lpdf(beta_away_raw | 0, 1);
   target+=normal_lpdf(mu|0,0.37);
   target+=normal_lpdf(home|0,0.37);
-  
-  
-  
+  target+=normal_lpdf(home|0,0.37);
+
   //likelihood-systematic component
   for (g in 1:n_games) {
     target+=skellam_without_lpmf(sets_diff[g]|lambda1_star[g],lambda2_star[g]) ;
   }
   
 }
+
+
 generated quantities{
- // vector[n_games] log_lik;
-  vector[n_games] log_lik_star;
-  //real dev;
-  real dev_star;
+  vector[n_games] log_lik;
+  real dev;
+  // vector[n_teams]   overall;// overall ability
 
-  dev_star=0;
-//  dev=0;
-    for (g in 1:n_games) {
-      //  log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1[g],lambda2[g]) ;
-       // dev=dev-2*log_lik[g];
-        log_lik_star[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
-        dev_star=dev_star-2*log_lik_star[g];
+  //real DIC;
+
+  dev=0;
+  for (i in 1:n_games) {
+    log_lik[i] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
+    dev=dev-2*log_lik[i];
   }
-
-  //overall=attack-defense;
+   //overall=attack-defense;
   //DIC=mean(dev)+0.5*variance(dev);
 }
+
 
 
 "
@@ -214,22 +217,24 @@ generated quantities{
 # Extraction of the candidate models' deviances (Table 2)
 
 # c=1
-full_zdts_only_skills_c_1<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_1,thin=1,chains=2,
+full_zdts_only_skills_c_1<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_1,
+                                thin=1,chains=1,
                                 iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
 
 
 
 # c=2
-full_zdts_only_skills_c_2<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_2,thin=1,chains=2,
-                             iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+full_zdts_only_skills_c_2<-stan(model_code=sensit_betas_zdts_skills.stan,
+                                data=data_zdts_only_skills_c_2,thin=1,chains=1,
+                                iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
 
 
 
 
 # c=5
 full_zdts_only_skills_c_1_2<-stan(model_code=sensit_betas_zdts_skills.stan,
-                                  data=data_zdts_only_skills_c_1_2,thin=1,chains=2,
-                                iter=10000,warmup=2000,seed="12345",init_r=1)#15980/16000=99.8%divergent transitions after warmup
+                                  data=data_zdts_only_skills_c_1_2,thin=1,chains=1,
+                                  iter=10000,warmup=2000,seed="12345",init_r=1)#15980/16000=99.8%divergent transitions after warmup
 
 # c=10
 full_zdts_only_skills_c_10<-stan(model_code=sensit_betas_zdts_skills.stan,data=data_zdts_only_skills_c_10,thin=1,chains=2,
@@ -239,15 +244,15 @@ full_zdts_only_skills_c_10<-stan(model_code=sensit_betas_zdts_skills.stan,data=d
 # c=1/20
 full_zdts_only_skills_c_1_20<-stan(model_code=sensit_betas_zdts_skills.stan,
                                    data=data_zdts_only_skills_c_1_20,thin=1,chains=2,
-                                 iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
+                                   iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
 # c=1/10
 full_zdts_only_skills_c_1_10<-stan(model_code=sensit_betas_zdts_skills.stan,
                                    data=data_zdts_only_skills_c_1_10,thin=1,chains=2,
                                    iter=10000,warmup=2000,seed="12345",init_r=1)#Effective Samples Size (ESS) is too low, 
 # c=1/2
 full_zdts_only_skills_c_1_2<-stan(model_code=sensit_betas_zdts_skills.stan,
-                                   data=data_zdts_only_skills_c_1_2,thin=1,chains=2,
-                                   iter=10000,warmup=2000,seed="12345",init_r=1)#Effect
+                                  data=data_zdts_only_skills_c_1_2,thin=1,chains=2,
+                                  iter=10000,warmup=2000,seed="12345",init_r=1)#Effect
 
 ##---Save several fitted models (c=1,2,5,10)
 save(full_zdts_only_skills_c_1,file="full_zdts_only_skills_c_1")
@@ -288,6 +293,7 @@ beta_away_full_zdts_only_skills_c_1_2<-extract(full_zdts_only_skills_c_1_2,pars=
 
 
 
+
 beta_home_full_zdts_only_skills_c_1<-as.data.frame(beta_home_full_zdts_only_skills_c_1)
 beta_away_full_zdts_only_skills_c_1<-as.data.frame(beta_away_full_zdts_only_skills_c_1)
 beta_home_full_zdts_only_skills_c_2<-as.data.frame(beta_home_full_zdts_only_skills_c_2)
@@ -308,22 +314,22 @@ beta_away_full_zdts_only_skills_c_1_10<-as.data.frame(beta_away_full_zdts_only_s
 beta_home_full_zdts_only_skills_c_1_2<-as.data.frame(beta_home_full_zdts_only_skills_c_1_2)
 beta_away_full_zdts_only_skills_c_1_2<-as.data.frame(beta_away_full_zdts_only_skills_c_1_2)
 ###-----------Rename the coefficients of stan fit objects
-  colnames(beta_home_full_zdts_only_skills_c_1_20)<-
+colnames(beta_home_full_zdts_only_skills_c_1_20)<-
   colnames(beta_home_full_zdts_only_skills_c_1_10)<-colnames(beta_home_full_zdts_only_skills_c_1_2)<-
   colnames(beta_home_full_zdts_only_skills_c_1)<-colnames(beta_home_full_zdts_only_skills_c_2)<-
   colnames(beta_home_full_zdts_only_skills_c_5)<-
   colnames(beta_home_full_zdts_only_skills_c_10)<-c(
-          "(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
-          "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
-          "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
-          "(Home) block net violation","(Home) failed block","(Home) failed setting")
+    "(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
+    "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+    "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
+    "(Home) block net violation","(Home) failed block","(Home) failed setting")
 
 colnames(beta_away_full_zdts_only_skills_c_1)<-colnames(beta_away_full_zdts_only_skills_c_2)<-colnames(beta_away_full_zdts_only_skills_c_5)<-
   colnames(beta_away_full_zdts_only_skills_c_10)<-c(
-            "(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
-            "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
-            "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
-            "(Away) block net violation","(Away) failed block","(Away) failed setting")
+    "(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
+    "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+    "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
+    "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
 
 
@@ -439,8 +445,8 @@ array_posterior_full_zdts_only_skills_c_10<-as.array(full_zdts_only_skills_c_10)
 
 ### 95% Posterior Density Areas for skills parameters across all candidate models (c=4,25,100 in variances)
 plot_beta_home_posterior_full_zdts_only_skills_c_2<-mcmc_areas(beta_home_full_zdts_only_skills_c_2,
-                      prob = 0.95,prob_outer=0.95,
-                      point_est = c( "mean"))+ggtitle("betas_home_c_2")+
+                                                               prob = 0.95,prob_outer=0.95,
+                                                               point_est = c( "mean"))+ggtitle("betas_home_c_2")+
   theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
         axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
         axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
@@ -449,8 +455,8 @@ plot_beta_home_posterior_full_zdts_only_skills_c_2<-mcmc_areas(beta_home_full_zd
 
 
 plot_beta_away_posterior_full_zdts_only_skills_c_2<-mcmc_areas(beta_away_full_zdts_only_skills_c_2,
-                       prob = 0.95,prob_outer=0.95,
-                       point_est = c( "mean"))+ggtitle("betas_away_c_2")+
+                                                               prob = 0.95,prob_outer=0.95,
+                                                               point_est = c( "mean"))+ggtitle("betas_away_c_2")+
   theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
         axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
         axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
@@ -479,8 +485,8 @@ plot_beta_away_posterior_full_zdts_only_skills_c_5<-mcmc_areas(beta_away_full_zd
 
 
 plot_beta_home_posterior_full_zdts_only_skills_c_10<-mcmc_areas(beta_home_full_zdts_only_skills_c_10,
-                                                               prob = 0.95,prob_outer=0.95,
-                                                               point_est = c( "mean"))+ggtitle("betas_home_c_10")+
+                                                                prob = 0.95,prob_outer=0.95,
+                                                                point_est = c( "mean"))+ggtitle("betas_home_c_10")+
   theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
         axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
         axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
@@ -489,8 +495,8 @@ plot_beta_home_posterior_full_zdts_only_skills_c_10<-mcmc_areas(beta_home_full_z
 
 
 plot_beta_away_posterior_full_zdts_only_skills_c_10<-mcmc_areas(beta_away_full_zdts_only_skills_c_10,
-                                                               prob = 0.95,prob_outer=0.95,
-                                                               point_est = c( "mean"))+ggtitle("betas_away_c_10")+
+                                                                prob = 0.95,prob_outer=0.95,
+                                                                point_est = c( "mean"))+ggtitle("betas_away_c_10")+
   theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
         axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
         axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
@@ -499,11 +505,11 @@ plot_beta_away_posterior_full_zdts_only_skills_c_10<-mcmc_areas(beta_away_full_z
 
 #----Plots Combinations
 full_zdts_only_skills_c_2_5_areas<-ggarrange(plot_beta_home_posterior_full_zdts_only_skills_c_2, plot_beta_away_posterior_full_zdts_only_skills_c_2,
-          plot_beta_home_posterior_full_zdts_only_skills_c_5, plot_beta_away_posterior_full_zdts_only_skills_c_5,
-          ncol = 2, nrow = 2)
+                                             plot_beta_home_posterior_full_zdts_only_skills_c_5, plot_beta_away_posterior_full_zdts_only_skills_c_5,
+                                             ncol = 2, nrow = 2)
 full_zdts_only_skills_c_5_10_areas<-ggarrange(plot_beta_home_posterior_full_zdts_only_skills_c_5, plot_beta_away_posterior_full_zdts_only_skills_c_5,
-          plot_beta_home_posterior_full_zdts_only_skills_c_10, plot_beta_away_posterior_full_zdts_only_skills_c_10,
-          ncol = 2, nrow = 2)
+                                              plot_beta_home_posterior_full_zdts_only_skills_c_10, plot_beta_away_posterior_full_zdts_only_skills_c_10,
+                                              ncol = 2, nrow = 2)
 
 
 

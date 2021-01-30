@@ -71,8 +71,27 @@ data_zdts_skills_c_10<-list(c=10,n_games=data_zdts_skills$N,
                             X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
                             home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
+####-----Future meeting 7 Action a)
 
+data_zdts_skills_c_1_20<-list(c=1/20,n_games=data_zdts_skills$N,
+                           away_team=as.numeric(data_zdts_skills$away_team),
+                           home_team=as.numeric(data_zdts_skills$home_team),
+                           n_teams=data_zdts_skills$n_teams,
+                           X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                           home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
+data_zdts_skills_c_1_10<-list(c=1/10,n_games=data_zdts_skills$N,
+                              away_team=as.numeric(data_zdts_skills$away_team),
+                              home_team=as.numeric(data_zdts_skills$home_team),
+                              n_teams=data_zdts_skills$n_teams,
+                              X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                              home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
+data_zdts_skills_c_1_2<-list(c=1/2,n_games=data_zdts_skills$N,
+                              away_team=as.numeric(data_zdts_skills$away_team),
+                              home_team=as.numeric(data_zdts_skills$home_team),
+                              n_teams=data_zdts_skills$n_teams,
+                              X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                              home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
 
 
 # Define the model implemented for sensitivity analysis
@@ -223,12 +242,34 @@ generated quantities{
 
 # Extraction of the candidate models' deviances (Table 2)
 
-# c=1
-full_zdts_skills_c_1_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,data=data_zdts_skills_c_1,thin=1,chains=2,cores=2,
+# c=1/20
+full_zdts_skills_c_1_20_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,
+                                                   data=data_zdts_skills_c_1_20,thin=1,chains=2,cores=2,
+                                                iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+
+save(full_zdts_skills_c_1_20_different_thresholds,file="full_zdts_skills_c_1_20_different_thresholds")
+
+
+# c=1/10
+full_zdts_skills_c_1_10_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,
+                                                data=data_zdts_skills_c_1_10,thin=1,chains=2,cores=2,
                                                                           iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
 
-save(full_zdts_skills_c_1_different_thresholds,file="full_zdts_skills_c_1_different_thresholds")
+save(full_zdts_skills_c_1_10_different_thresholds,file="full_zdts_skills_c_1_10_different_thresholds")
 
+# c=1/2
+full_zdts_skills_c_1_2_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,
+                                                   data=data_zdts_skills_c_1_2,thin=1,chains=2,cores=2,
+                                                   iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+
+save(full_zdts_skills_c_1_2_different_thresholds,file="full_zdts_skills_c_1_2_different_thresholds")
+
+# c=1
+full_zdts_skills_c_1_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,
+                                                data=data_zdts_skills_c_1,thin=1,chains=2,cores=2,
+                                                iter=10000,warmup=2000,seed="12345",init_r=1)#15948/16000=99.6% divergent transitions after warmup
+
+save(full_zdts_skills_c_1_different_thresholds,file="full_zdts_skills_c_1_different_thresholds")
 
 # c=2
 full_zdts_skills_c_2_different_thresholds<-stan(model_code=sensit_betas_zdts_skills_different_thresholds.stan,data=data_zdts_skills_c_2,thin=1,chains=2,cores=2,
@@ -298,6 +339,16 @@ colnames(beta_away_full_zdts_skills_c_1_different_thresholds)<-colnames(beta_awa
 
 ##---------------------------------------------------------
 ##-------1) Deviances Comparison across several values of c
+#----c=1/20
+dev_full_zdts_skills_c_1_20_different_thresholds<-extract(full_zdts_skills_c_1_20_different_thresholds,pars="dev")
+dev_full_zdts_skills_c_1_20_different_thresholds$dev
+
+#----c=1/10
+dev_full_zdts_skills_c_1_10_different_thresholds<-extract(full_zdts_skills_c_1_10_different_thresholds,pars="dev")
+dev_full_zdts_skills_c_1_10_different_thresholds$dev
+#----c=1/2
+dev_full_zdts_skills_c_1_2_different_thresholds<-extract(full_zdts_skills_c_1_2_different_thresholds,pars="dev")
+dev_full_zdts_skills_c_1_2_different_thresholds$dev
 
 #----c=1
 dev_full_zdts_skills_c_1_different_thresholds<-extract(full_zdts_skills_c_1_different_thresholds,pars="dev")
@@ -329,12 +380,20 @@ sd(dev_full_zdts_skills_c_5_different_thresholds$dev)# 9.1
 mean(dev_full_zdts_skills_c_10_different_thresholds$dev)#211.4
 sd(dev_full_zdts_skills_c_10_different_thresholds$dev)# 9.02
 
+####------Minimum Deviances
+min(dev_full_zdts_skills_c_1_20_different_thresholds$dev)#
+min(dev_full_zdts_skills_c_1_10_different_thresholds$dev)#
+min(dev_full_zdts_skills_c_1_2_different_thresholds$dev)#
 
 min(dev_full_zdts_skills_c_1_different_thresholds$dev)#
 min(dev_full_zdts_skills_c_2_different_thresholds$dev)
 min(dev_full_zdts_skills_c_5_different_thresholds$dev)
 min(dev_full_zdts_skills_c_10_different_thresholds$dev)
 #---- 2)Sensitivity Analysis:  
+rstan::check_divergences(full_zdts_skills_c_1_20_different_thresholds)#0%
+rstan::check_divergences(full_zdts_skills_c_1_10_different_thresholds)#0%
+rstan::check_divergences(full_zdts_skills_c_1_2_different_thresholds)#0%
+
 rstan::check_divergences(full_zdts_skills_c_1_different_thresholds)#0%
 rstan::check_divergences(full_zdts_skills_c_2_different_thresholds)#0%
 rstan::check_divergences(full_zdts_skills_c_5_different_thresholds)#50.2%
