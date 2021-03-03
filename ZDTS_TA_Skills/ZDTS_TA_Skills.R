@@ -15,13 +15,13 @@ load("data_zdts_skills")
 
 
 #Rename the columns
-colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
+                  "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                     "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
                     "(Home) block net violation","(Home) failed block","(Home) failed setting")
 
-colnames(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
-                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+colnames(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
+                  "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
                     "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                     "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
@@ -32,32 +32,35 @@ for (i in 1:dim(X_home)[2]){
   X_away_std[,i]<-(X_away[,i]-mean(X_away[,i]))/sd(X_away[,i])
 }
 
-colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
+                        "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                         "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
                         "(Home) block net violation","(Home) failed block","(Home) failed setting")
 
-colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
-                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
+                        "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
 
-data_zdts_skills<-list(n_games=132,
-		away_team=as.numeric(data_zdts_skills$away_team),
-			home_team=as.numeric(data_zdts_skills$home_team),
-				n_teams=data_zdts_skills$n_teams,
-				X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
-		home_sets=data_zdts_skills$home_sets,away_sets=data_zdts_skills$away_sets)
+data_zdts_ta_skills<-list(c_thres=5,c_std=8,
+                       n_games=data_zdts_skills$N,
+                       away_team=as.numeric(data_zdts_skills$away_team),
+                       home_team=as.numeric(data_zdts_skills$home_team),
+                       n_teams=data_zdts_skills$n_teams,
+                       X_home=X_home_std,X_away=X_away_std,
+                       K=ncol(X_home_std),
+                       home_sets=data_zdts_skills$home_sets,
+                       away_sets=data_zdts_skills$away_sets)
 
 
 ## Run full_zdts_only_skills.stan
-full_zdts_skills<-stan("full_zdts_skills.stan",
-                             data=data_zdts_skills,chains=4,init_r=0.5,
-                             iter=12000,warmup=2000)### R
+full_zdts_ta_skills<-stan("full_zdts_skills.stan",
+                  data=data_zdts_ta_skills,chains=4,init_r=0.5,
+                   iter=12000,warmup=2000)### R
 
 # Load the output from the full ZDTS model ("full_zdts_skills")
-load("full_zdts_skills")
+# load("full_zdts_ta_skills")
 
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
@@ -95,7 +98,7 @@ betas_away<-post_mean_beta_away
 gammas_home_matrix<-gammas_away_matrix<-betas_home_matrix<-betas_away_matrix<-NULL
 
 
-T<-10000 # Total MCMC iterations
+T<-60000 # Total MCMC iterations
 
 # Step 2 
 for (i in 1:T){
