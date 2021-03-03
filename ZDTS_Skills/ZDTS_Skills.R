@@ -105,7 +105,8 @@ for (i in 1:T){
   print(i)
   
   # Step 3: Data input needed for running the model through RStan.
-  data_varsel_zdts<-list(n_teams=12,n_games=132,
+  data_varsel_zdts<-list(n_teams=data_zdts_skills$n_teams,n_games=data_zdts_skills$N,
+                         c_thres=5,c_std=8,
                          home_sets=data_zdts_skills$home_sets,
                          away_sets=data_zdts_skills$away_sets,
                          X_home=as.matrix(X_home_std),X_away=as.matrix(X_away_std),

@@ -105,7 +105,8 @@ for (i in 1:T){
   print(i)
   
   # Step 3: Data input needed for running the model through RStan.
-  data_varsel_zdts<-list(n_teams=12,n_games=132,
+  data_varsel_zdts<-list(n_teams=data_zdts_skills$n_teams,n_games=data_zdts_skills$N,
+                         c_thres=5,c_std=8,
                          home_sets=data_zdts_skills$home_sets,
                          away_sets=data_zdts_skills$away_sets,
                          X_home=as.matrix(X_home_std),X_away=as.matrix(X_away_std),
@@ -206,15 +207,17 @@ final_posterior_values_betas_away<-matrix(betas_away_matrix[(data_varsel_zdts$K*
                                           nrow=T-warmup,ncol=data_varsel_zdts$K,byrow=TRUE)
 # Prepare a dataframe with column names the names of candidate variables.
 df_final_posterior_values_gammas_home<-as.data.frame(final_posterior_values_gammas_home)
-names(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
-                 "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
-                 "(Home) block net violation","(Home) failed block","(Home) failed setting")
+names(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve",
+"(Home) perfect pass","  (Home) very good pass","(Home) poor pass","(Home) failed pass",
+"(Home) perfect att1","(Home) blocked att1",
+      "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
+  "(Home) block net violation","(Home) failed block","(Home) failed setting")
 colnames(df_final_posterior_values_gammas_home)<-names(X_home)
 
 df_final_posterior_values_gammas_away<-as.data.frame(final_posterior_values_gammas_away)
-names(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass","
-                                 (Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
+names(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve",
+"(Away) perfect pass","  (Away) very good pass","(Away) poor pass","(Away) failed pass",
+"(Away) perfect att1","(Away) blocked att1",
                  "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                  "(Away) block net violation","(Away) failed block","(Away) failed setting")
 colnames(df_final_posterior_values_gammas_away)<-names(X_away)
