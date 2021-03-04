@@ -98,7 +98,10 @@ betas_away<-post_mean_beta_away
 gammas_home_matrix<-gammas_away_matrix<-betas_home_matrix<-betas_away_matrix<-NULL
 
 
-T<-60000 # Total MCMC iterations
+
+
+T<-70000 # Total MCMC iterations
+
 
 # Step 2 
 for (i in 1:T){
@@ -187,7 +190,7 @@ save(betas_home_matrix,file="betas_home_matrix")
 save(betas_away_matrix,file="betas_away_matrix")
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen 10% of total T iterations).
-warmup<-2000
+warmup<-10000
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_gammas_home<-matrix(gammas_home_matrix[(data_varsel_zdts$K*warmup+1):length(gammas_home_matrix)],
                                            nrow=T-warmup,ncol=data_varsel_zdts$K,byrow=TRUE)

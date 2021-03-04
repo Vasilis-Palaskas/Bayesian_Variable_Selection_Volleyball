@@ -19,8 +19,8 @@ setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selec
 #### Standardization of the model Matrices for numerical convenience
 
 #Rename the columns
-colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass","
-                                 (Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
+colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
+                    "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                     "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
                     "(Home) block net violation","(Home) failed block","(Home) failed setting") 
 
@@ -71,7 +71,7 @@ data_zdts_only_skills<-list(n_games=data_zdts_skills$N,
 
 ## Run ZDTS_Skills_after_BVS.stan
 ZDTS_Skills_after_BVS<-stan("ZDTS_Skills_after_BVS.stan",
-                            data=data_zdts_only_skills,chains=2,init_r=0.5,
+                            data=data_zdts_only_skills,chains=3,init_r=0.5,
                             iter=12000,warmup=2000)### R
 
 save(ZDTS_Skills_after_BVS,file="ZDTS_Skills_after_BVS")
