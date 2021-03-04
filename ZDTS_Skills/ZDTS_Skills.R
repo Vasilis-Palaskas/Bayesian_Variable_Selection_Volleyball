@@ -47,7 +47,7 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
                         "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
-
+##----------Step 0: Run the full model to obtain the pilot posterior standard dev. and means
 data_zdts_only_skills<-list(c_thres=5,c_std=8,
                             n_games=data_zdts_skills$N,
                        n_teams=data_zdts_skills$n_teams,
@@ -56,14 +56,12 @@ data_zdts_only_skills<-list(c_thres=5,c_std=8,
                        away_sets=data_zdts_skills$away_sets)
 
 
-## Run full_zdts_only_skills.stan
+
 full_zdts_only_skills<-stan(file.choose(),
                              data=data_zdts_only_skills,chains=4,init_r=0.5,
-                             iter=12000,warmup=2000)### R
+                             iter=12000,warmup=2000)### ## Run full_zdts_only_skills.stan
 
 save(full_zdts_only_skills,file="full_zdts_only_skills")
-# Load the output from the full ZDTS model ("full_zdts_only_skills")
-# load("full_zdts_only_skills")
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
 betas_summary<-summary(full_zdts_only_skills, pars = c("beta_home","beta_away"))$summary
@@ -72,7 +70,8 @@ mu_summary<-summary(full_zdts_only_skills, pars = c("mu"))$summary
 home_summary<-summary(full_zdts_only_skills, pars = c("home"))$summary
 
 
-# Use their posterior means and standard deviations for both initial values specification and prior specification.
+# Use their posterior means and standard deviations (from pilot run)
+# for both initial values specification and prior specification.
 
 post_mean_beta_home<-betas_summary[1:17,1]####posterior mean for beta home
 post_mean_beta_away<-betas_summary[18:34,1]####posterior mean for beta
@@ -83,7 +82,11 @@ post_sd_beta_away<-betas_summary[18:34,3]### posterior sd for beta
 post_mean_beta<-c(post_mean_beta_home,post_mean_beta_away)
 post_sd_beta<-c(post_sd_beta_home,post_sd_beta_away)
 
-# Step 1: Initialization of the model parameters.
+####------------------
+###  BSS For ZDTS model with only skill actions can now begin
+####------------------
+
+# -------Step 1: Initialization of the model parameters.
 
 gammas_home<-rep(1,17)
 gammas_away<-rep(1,17)
@@ -99,11 +102,10 @@ gammas_home_matrix<-gammas_away_matrix<-betas_home_matrix<-betas_away_matrix<-NU
 
 
 
-
 T<-70000 # Total MCMC iterations
 
 
-# Step 2 
+# -------Step 2 
 for (i in 1:T){
   print(i)
   
