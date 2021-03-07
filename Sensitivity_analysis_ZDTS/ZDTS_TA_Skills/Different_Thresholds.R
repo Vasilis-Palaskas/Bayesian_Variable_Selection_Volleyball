@@ -320,14 +320,14 @@ dev_full_zdts_skills_c_10_different_thresholds$dev
 
 
 #---- 1)Sensitivity Analysis: Deviances Comparison Table (c=2,5,10)
-mean(dev_full_zdts_skills_c_1_different_thresholds$dev)#214.5
-sd(dev_full_zdts_skills_c_1_different_thresholds$dev)#9.7
-mean(dev_full_zdts_skills_c_2_different_thresholds$dev)#212.6
+mean(dev_full_zdts_skills_c_1_different_thresholds$dev)#215.3
+sd(dev_full_zdts_skills_c_1_different_thresholds$dev)#11.2
+mean(dev_full_zdts_skills_c_2_different_thresholds$dev)#212.4
 sd(dev_full_zdts_skills_c_2_different_thresholds$dev)#9.2
-mean(dev_full_zdts_skills_c_5_different_thresholds$dev)#212.0
+mean(dev_full_zdts_skills_c_5_different_thresholds$dev)#210.0
 sd(dev_full_zdts_skills_c_5_different_thresholds$dev)# 9.1
-mean(dev_full_zdts_skills_c_10_different_thresholds$dev)#211.4
-sd(dev_full_zdts_skills_c_10_different_thresholds$dev)# 9.02
+mean(dev_full_zdts_skills_c_10_different_thresholds$dev)#208.9
+sd(dev_full_zdts_skills_c_10_different_thresholds$dev)# 9.9
 
 
 min(dev_full_zdts_skills_c_1_different_thresholds$dev)#
