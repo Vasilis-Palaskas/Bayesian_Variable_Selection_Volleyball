@@ -47,8 +47,8 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
 
 ##---Initializing Matrix for minimum deviances-divergent transitions
 
-min_dev_vector<-div_trans_vector<-NULL
-for (i in c_thres){
+ min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-div_trans_vector<-NULL
+ for (i in c_thres){
      for (j in c_std){
       data_std_thres_zdts_skills<-list(c_thres=i,c_std=j,
                                        n_games=data_zdts_skills$N,
@@ -207,22 +207,45 @@ full_zdts_skills<-stan(model_code=sensit_betas_zdts_skills_std_thres.stan,
 dev_full_zdts_skills<-extract(full_zdts_skills,pars="dev")
 
 ##--Summary Statistics of Model Deviances-divergent transitions
+##--Summary Statistics of Model Deviances-divergent transitions
 min_dev_vector<-c(min_dev_vector,min(dev_full_zdts_skills$dev))
+mean_dev_vector<-c(mean_dev_vector,mean(dev_full_zdts_skills$dev))
+sd_dev_vector<-c(sd_dev_vector,sd(dev_full_zdts_skills$dev))
+median_dev_vector<-c(median_dev_vector,median(dev_full_zdts_skills$dev))
 divergent <- get_sampler_params(full_zdts_skills, inc_warmup=FALSE)[[1]][,'divergent__']
-
 div_trans_vector<-c(div_trans_vector,sum(divergent)/(total_iters-warmup_iters))
-
      }
 }
-#---Tables with minimum deviances-divergent transitions
+#---Tables with summary statistics of deviances and divergent transitions
 table_min_dev<-matrix(min_dev_vector,ncol=9,nrow=9)
+table_mean_dev<-matrix(mean_dev_vector,ncol=9,nrow=9)
+table_median_dev<-matrix(median_dev_vector,ncol=9,nrow=9)
+table_sd_dev<-matrix(sd_dev_vector,ncol=9,nrow=9)
 table_div_trans<-matrix(div_trans_vector,nrow=9,ncol=9)
+
+# Rounding
 table_min_dev<-round(table_min_dev,1)
 table_div_trans<-round(table_div_trans,2)
+table_median_dev<-round(table_median_dev,1)
+table_mean_dev<-round(table_mean_dev,1)
+table_sd_dev<-round(table_sd_dev,2)
 
-
+#----Save results
 write.csv(table_min_dev,file="table_deviances_zdts_ta_skills.csv")
 write.csv(table_div_trans,file="table_div_trans_zdts_ta_skills.csv")
+write.csv(table_median_dev,file="table_median_deviances_zdts_ta_skills.csv")
+write.csv(table_mean_trans,file="table_mean_deviances_zdts_ta_skills.csv")
+write.csv(table_sd_trans,file="table_sd_deviances_zdts_ta_skills.csv")
+
+
+
+
+
+
+
+
+
+
 library(xtable)
 table_min_dev_new<-cbind(c(1/20,1/10,1/2,1,2,5,10),table_min_dev)
 table_min_dev_new<-rbind(c(0,1/2,1,2,5,10),table_min_dev_new)
