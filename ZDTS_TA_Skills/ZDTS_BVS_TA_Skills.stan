@@ -55,6 +55,8 @@ data {
   vector[K] post_mean_beta_away; //posterior means of (away team's) betas from a MCMC pilot run of full model
   vector[K] post_sd_beta_home; //posterior stan. deviat. of (home team's) betas from a MCMC pilot run of full model
   vector[K] post_sd_beta_away; //posterior stan. deviat. of (away team's) betas from a MCMC pilot run of full model
+  real<lower=0> c_thres;//c: upper threshold multiplicator for lambdas parameters
+  real<lower=0> c_std;//c: upper threshold multiplicator for lambdas parameters
 }
 
 
@@ -73,10 +75,11 @@ transformed parameters {
 
   vector[n_teams]   attack;
   vector[n_teams]   defense;
-  vector[n_games]   lambda1_star;
-  vector[n_games]   lambda2_star; 
+ 
   vector[n_games]   lambda1;
   vector[n_games]   lambda2;
+    vector[n_games]   lambda1_star;
+  vector[n_games]   lambda2_star;
   vector[K] gb_home;
   vector[K] gb_away;
   
@@ -95,22 +98,22 @@ transformed parameters {
   defense[n_teams]= -sum(defense_raw);
 
   // Linear predictor
-  lambda1_star= exp(mu+home+attack[home_team]+defense[away_team]+X_home * gb_home);          
-  lambda2_star= exp(mu+attack[away_team]+defense[home_team]+X_away* gb_away); 
+  lambda1= exp(mu+home+attack[home_team]+defense[away_team]+X_home * gb_home);          
+  lambda2= exp(mu+attack[away_team]+defense[home_team]+X_away* gb_away); 
   
   // We specified an upper bound in order to avoid numeric overflow problem for model parameters
-  for (g in 1:n_games) {
-    if (lambda1_star[g]>100.0){
-      lambda1[g]=100.0;
+   for (g in 1:n_games) {
+     if (lambda1[g]>(100*c_thres)){
+      lambda1_star[g]=(100*c_thres);
     } else {
-      lambda1[g]=lambda1_star[g];
+       lambda1_star[g]=lambda1[g];
     }
-    if (lambda2_star[g]>100.0){
-      lambda2[g]=100.0;
+    if (lambda2[g]>(100*c_thres)){
+       lambda2_star[g]=(100*c_thres);
     } else {
-      lambda2[g]=lambda2_star[g];
-    }
-  }
+       lambda2_star[g]=lambda2[g];
+     }
+   }
 }
 
 model {
@@ -131,7 +134,7 @@ model {
  // Likelihood
   
   for (g in 1:n_games){
-    target+=skellam_without_lpmf((home_sets[g]-away_sets[g])|lambda1[g],lambda2[g]);
+    target+=skellam_without_lpmf((home_sets[g]-away_sets[g])|lambda1_star[g],lambda2_star[g]);
     
   }
 }
@@ -147,10 +150,11 @@ generated quantities{
 
   // the linear predictor when we want to estimate the 
   // log likelihood for the opposite value of binary indicator within the if-loop.
-  vector[n_games] lambda1_star_new;
-  vector[n_games] lambda2_star_new;
+
   vector[n_games] lambda1_new;
   vector[n_games] lambda2_new;
+  vector[n_games] lambda1_star_new;
+  vector[n_games] lambda2_star_new;
   
    for (i in 1:n_games) {
      for (j in 1:K){
@@ -158,64 +162,64 @@ generated quantities{
       // In each case of if-loop, we estimate the log likelihood for both cases
       // of binary indicators gamma
       if (gb_home[j]==0){
-         log_lik_zero[i,j] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2[i]);
+         log_lik_zero[i,j] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
          gb_new_home=gb_home;
          gb_new_home[j]=1*beta_home[j];
-         lambda1_star_new[i]=exp(mu+home+X_home[i,]*gb_new_home+attack[home_team[i]]+defense[away_team[i]]);
+         lambda1_new[i]=exp(mu+home+X_home[i,]*gb_new_home+attack[home_team[i]]+defense[away_team[i]]);
 
 	// We specified an upper bound in order to avoid numeric overflow problem for model parameters
-         if (lambda1_star_new[i]>100.0){
-              lambda1_new[i]=100.0;
+         if (lambda1_new[i]>c_thres*100){
+              lambda1_star_new[i]=c_thres*100;
           } else {
-              lambda1_new[i]=lambda1_star_new[i];
+               lambda1_star_new[i]=lambda1_new[i];
           }
          
-         log_lik_one[i,j]=  skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_new[i],lambda2[i]);
+      log_lik_one[i,j]=  skellam_without_lpmf(home_sets[i]-away_sets[i] | lambda1_star_new[i],lambda2_star[i]);
       } else {
-         log_lik_one[i,j]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2[i]);
+         log_lik_one[i,j]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
          gb_new_home=gb_home;
          gb_new_home[j]=0;
-         lambda1_star_new[i]=exp(mu+home+X_home[i,]*gb_new_home+attack[home_team[i]]+defense[away_team[i]]);
+         lambda1_new[i]=exp(mu+home+X_home[i,]*gb_new_home+attack[home_team[i]]+defense[away_team[i]]);
          
 	// We specified an upper bound in order to avoid numeric overflow problem for model parameters
-          if (lambda1_star_new[i]>100.0){
-              lambda1_new[i]=100.0;
+         if (lambda1_new[i]>c_thres*100){
+              lambda1_star_new[i]=c_thres*100;
           } else {
-              lambda1_new[i]=lambda1_star_new[i];
+               lambda1_star_new[i]=lambda1_new[i];
           }
           
-         log_lik_zero[i,j]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_new[i],lambda2[i]);
+         log_lik_zero[i,j]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star_new[i],lambda2_star[i]);
       }
       
       if (gb_away[j]==0){
-         log_lik_zero[i,j+K] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2[i]);
+         log_lik_zero[i,j+K] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
          gb_new_away=gb_away;
          gb_new_away[j]=1*beta_away[j];
-         lambda2_star_new[i]=exp(mu+X_away[i,]*gb_new_away+attack[away_team[i]]+defense[home_team[i]]);
+         lambda2_new[i]=exp(mu+X_away[i,]*gb_new_away+attack[away_team[i]]+defense[home_team[i]]);
         
 	// We specified an upper bound in order to avoid numeric overflow problem for model parameters
-        if (lambda2_star_new[i]>100.0){
-              lambda2_new[i]=100.0;
+        if (lambda2_new[i]>c_thres*100){
+             lambda2_star_new[i]=c_thres*100;
         } else {
-              lambda2_new[i]=lambda2_star_new[i];
+             lambda2_star_new[i]=lambda2_new[i];
         }
           
-        log_lik_one[i,j+K]=  skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2_new[i]);
+        log_lik_one[i,j+K]=  skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star_new[i]);
         
       } else {
-         log_lik_one[i,j+K]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2[i]);
+         log_lik_one[i,j+K]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
          gb_new_away=gb_away;
          gb_new_away[j]=0;
-         lambda2_star_new[i]=exp(mu+X_away[i,]*gb_new_away+attack[away_team[i]]+defense[home_team[i]]);
+         lambda2_new[i]=exp(mu+X_away[i,]*gb_new_away+attack[away_team[i]]+defense[home_team[i]]);
               
 	// We specified an upper bound in order to avoid numeric overflow problem for model parameters
-         if (lambda2_star_new[i]>100.0){
-              lambda2_new[i]=100.0;
-         } else {
-              lambda2_new[i]=lambda2_star_new[i];
-         }
+        if (lambda2_new[i]>c_thres*100){
+             lambda2_star_new[i]=c_thres*100;
+        } else {
+             lambda2_star_new[i]=lambda2_new[i];
+        }
         
-        log_lik_zero[i,j+K]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2_new[i]);
+        log_lik_zero[i,j+K]=skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star_new[i]);
 
       }
     }
