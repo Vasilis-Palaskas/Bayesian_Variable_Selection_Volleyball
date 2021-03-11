@@ -46,8 +46,10 @@ c_std<-c(1/20,1/10,1/2,1,2,5,8,9,10)
 
 
 ##---Initializing Matrix for minimum deviances-divergent transitions
-
-min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-div_trans_vector<-NULL
+i<-1/20
+j<-1/10
+min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-
+  div_trans_vector<-deviance_median_vector<-NULL
 for (i in c_thres){
   for (j in c_std){
     data_std_thres_zdts_skills<-list(c_thres=i,c_std=j,
@@ -186,12 +188,27 @@ warmup_iters<-2000
 total_iters<-12000
 full_zdts_only_skills<-stan(model_code=sensit_betas_zdts_only_skills_std_thres.stan,
                        data= data_std_thres_zdts_skills,thin=1,
-                       chains=1,cores=1,
-                       iter=total_iters,warmup=warmup_iters,
-                       seed="1234",init_r=1)
+                       chains=2,cores=2,
+                       iter=total_iters,warmup=warmup_iters,init_r=1)
 
 # Extraction of the candidate models' deviances (Table 2)
 dev_full_zdts_skills<-extract(full_zdts_only_skills,pars="dev")
+#----Deviance estimates by the median of l1, l2 parameters
+l1_star<-extract(full_zdts_only_skills,pars="lambda1_star")
+l2_star<-extract(full_zdts_only_skills,pars="lambda2_star")
+l1_star_median<-apply(l1_star$lambda1_star,2,median)
+l2_star_median<-apply(l2_star$lambda2_star,2,median)
+deviance_median<-0
+zdts_support<-c(-3,-2,-1,1,2,3)
+log_lik_median<-NULL
+for (l in 1:data_std_thres_zdts_skills$n_games){
+  log_lik_median<-log(dskellam(data_std_thres_zdts_skills$home_sets[l]-
+                             data_std_thres_zdts_skills$away_sets[l],
+                           l1_star_median[l],l2_star_median[l])/sum(
+                             dskellam(zdts_support,l1_star_median[l],
+                                      l2_star_median[l])))
+  deviance_median=deviance_median-2*log_lik_median
+  }
 
 ##--Summary Statistics of Model Deviances-divergent transitions
 min_dev_vector<-c(min_dev_vector,min(dev_full_zdts_skills$dev))
@@ -199,8 +216,8 @@ mean_dev_vector<-c(mean_dev_vector,mean(dev_full_zdts_skills$dev))
 sd_dev_vector<-c(sd_dev_vector,sd(dev_full_zdts_skills$dev))
 median_dev_vector<-c(median_dev_vector,median(dev_full_zdts_skills$dev))
 divergent <- get_sampler_params(full_zdts_only_skills, inc_warmup=FALSE)[[1]][,'divergent__']
-div_trans_vector<-c(div_trans_vector,sum(divergent)/(total_iters-warmup_iters))
-
+div_trans_vector<-c(div_trans_vector,sum(divergent)/(2*(total_iters-warmup_iters)))
+deviance_median_vector<-c(deviance_median_vector,deviance_median)
   }
 }
 #---Tables with summary statistics of deviances and divergent transitions
