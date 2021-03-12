@@ -41,8 +41,8 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
 
 ###-----Datalists required for the Bayesian model fitting across several values of c
 ###----- c: prior standard deviation multiplicator for betas parameters
-c_thres<-c(1/20,1/10,1/2,1,2,5,8,9,10)
-c_std<-c(1/20,1/10,1/2,1,2,5,8,9,10)
+c_thres<-c(1/10)
+c_std<-c(9,10)
 
 
 ##---Initializing Matrix for minimum deviances-divergent transitions
