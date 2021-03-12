@@ -63,11 +63,11 @@ full_zdts_ta_skills<-stan("full_zdts_skills.stan",
 
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
-betas_summary<-summary(full_zdts_skills, pars = c("beta_home","beta_away"))$summary
-attack_raw_summary<-summary(full_zdts_skills, pars = c("attack_raw"))$summary
-defense_raw_summary<-summary(full_zdts_skills, pars = c("defense_raw"))$summary
-mu_summary<-summary(full_zdts_skills, pars = c("mu"))$summary
-home_summary<-summary(full_zdts_skills, pars = c("home"))$summary
+betas_summary<-summary(full_zdts_ta_skills, pars = c("beta_home","beta_away"))$summary
+attack_raw_summary<-summary(full_zdts_ta_skills, pars = c("attack_raw"))$summary
+defense_raw_summary<-summary(full_zdts_ta_skills, pars = c("defense_raw"))$summary
+mu_summary<-summary(full_zdts_ta_skills, pars = c("mu"))$summary
+home_summary<-summary(full_zdts_ta_skills, pars = c("home"))$summary
 
 
 
@@ -122,16 +122,19 @@ for (i in 1:T){
                          post_mean_beta_home=post_mean_beta_home,post_mean_beta_away=post_mean_beta_away,
                          post_sd_beta_home=post_sd_beta_home,post_sd_beta_away=post_sd_beta_away)
   
-   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
+  # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
-
+  n_chains <- 4
+  initf2 <- function(chain_id = 1) {
+	    list(beta_home=betas_home,beta_away=betas_away,
+                    mu=mu, home=home,
+                    attack_raw=attack_raw,defense_raw=defense_raw)
+      }
+  init_ll <- lapply(1:n_chains, function(id) initf2(chain_id = id))
   zdts_volley_skills_all<-stan("ZDTS_BVS_TA_Skills.stan",
-                               data=data_varsel_zdts,chains=1,
-                                iter=21,warmup=20,init=list(list(beta_home=betas_home,beta_away=betas_away,
-                                                     mu=mu,
-                                                     home=home,
-                                                     attack_raw=attack_raw,defense_raw=defense_raw)),
-control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))### R
+                               data=data_varsel_zdts,chains=n_chains,
+                                iter=21,warmup=20,init=init_ll,
+                                control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))### R
 
   # Initialize the log-likelihood for both cases 0 and 1 for gammas indicators/coefficients.
   log_point_zero<-matrix(NA,nrow=data_varsel_zdts$n_games,ncol=(2*data_varsel_zdts$K)) # matrix with log likelihoods when gamma[j]=0

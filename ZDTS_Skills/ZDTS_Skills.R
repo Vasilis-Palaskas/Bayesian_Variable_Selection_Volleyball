@@ -14,8 +14,8 @@ load("data_zdts_skills")
 # load("X_away")
 # load("data_zdts_skills")
 #Model matrices for home and away sets scored, respectively
-X_home<-data_zdts_skills[,c(1:17)]
-X_away<-data_zdts_skills[,c(18:34)]
+#X_home<-data_zdts_skills[,c(1:17)]
+#X_away<-data_zdts_skills[,c(18:34)]
 
 #Rename the columns
 
@@ -122,11 +122,15 @@ for (i in 1:T){
   
   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
+  n_chains <- 4
+  initf2 <- function(chain_id = 1) {
+	    list(beta_home=betas_home,beta_away=betas_away, mu=mu, home=home)
+      }
+  init_ll <- lapply(1:n_chains, function(id) initf2(chain_id = id))
   zdts_volley_skills_all<-stan("ZDTS_BVS_Skills.stan",
-                               data=data_varsel_zdts,chains=1,
-                               iter=21,warmup=20,init=list(list(beta_home=betas_home,beta_away=betas_away,
-                                                                mu=mu,
-                                                                home=home)),
+                               data=data_varsel_zdts,chains=n_chains,
+                               iter=21,warmup=20,
+                               init= init_ll,
                                control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))### R
   
   # Initialize the log-likelihood for both cases 0 and 1 for gammas indicators/coefficients.
