@@ -116,8 +116,8 @@ for (i in 1:T){
                          away_sets=data_zdts_skills$away_sets,
                          X_home=as.matrix(X_home_std),X_away=as.matrix(X_away_std),
                          K=ncol(X_home_std),
-                         home_team=data_zdts_skills$home_team,
-                         away_team=data_zdts_skills$away_team,
+                         home_team=as.numeric(data_zdts_skills$home_team),
+                         away_team=as.numeric(data_zdts_skills$away_team),
                          gammas_home=gammas_home,gammas_away=gammas_away,
                          post_mean_beta_home=post_mean_beta_home,post_mean_beta_away=post_mean_beta_away,
                          post_sd_beta_home=post_sd_beta_home,post_sd_beta_away=post_sd_beta_away)
