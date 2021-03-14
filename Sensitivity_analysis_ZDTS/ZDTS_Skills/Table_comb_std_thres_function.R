@@ -2,7 +2,7 @@
 library(rstan)
 library(coda)
 library(bayesplot)
-
+library(skellam)
 # Activate multiple cores for stan models
 options(mc.cores = parallel::detectCores())# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
 # setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
@@ -41,13 +41,16 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
 
 ###-----Datalists required for the Bayesian model fitting across several values of c
 ###----- c: prior standard deviation multiplicator for betas parameters
-c_thres<-c(1/10)
-c_std<-c(9,10)
+c_thres<-c(1/20,1/10,1/2,1,2,5,8,9,10)
+c_std<-c(1/20,1/10,1/2,1,2,5,8,9,10)
+
+c_thres<-c(8,9,10)
+c_std<-c(1/2,1,2,5,8,9,10)
+zdts_support<-c(-3,-2,-1,1,2,3)
 
 
 ##---Initializing Matrix for minimum deviances-divergent transitions
-i<-1/20
-j<-1/10
+
 min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-
   div_trans_vector<-deviance_median_vector<-NULL
 for (i in c_thres){
@@ -189,7 +192,7 @@ total_iters<-12000
 full_zdts_only_skills<-stan(model_code=sensit_betas_zdts_only_skills_std_thres.stan,
                        data= data_std_thres_zdts_skills,thin=1,
                        chains=2,cores=2,
-                       iter=total_iters,warmup=warmup_iters,init_r=1)
+                       iter=total_iters,warmup=warmup_iters,init_r=1,seed="1234")
 
 # Extraction of the candidate models' deviances (Table 2)
 dev_full_zdts_skills<-extract(full_zdts_only_skills,pars="dev")
@@ -199,14 +202,15 @@ l2_star<-extract(full_zdts_only_skills,pars="lambda2_star")
 l1_star_median<-apply(l1_star$lambda1_star,2,median)
 l2_star_median<-apply(l2_star$lambda2_star,2,median)
 deviance_median<-0
-zdts_support<-c(-3,-2,-1,1,2,3)
 log_lik_median<-NULL
 for (l in 1:data_std_thres_zdts_skills$n_games){
   log_lik_median<-log(dskellam(data_std_thres_zdts_skills$home_sets[l]-
                              data_std_thres_zdts_skills$away_sets[l],
                            l1_star_median[l],l2_star_median[l])/sum(
                              dskellam(zdts_support,l1_star_median[l],
-                                      l2_star_median[l])))
+                                      l2_star_median[l])
+                                                                    )
+                      )
   deviance_median=deviance_median-2*log_lik_median
   }
 
@@ -216,7 +220,8 @@ mean_dev_vector<-c(mean_dev_vector,mean(dev_full_zdts_skills$dev))
 sd_dev_vector<-c(sd_dev_vector,sd(dev_full_zdts_skills$dev))
 median_dev_vector<-c(median_dev_vector,median(dev_full_zdts_skills$dev))
 divergent <- get_sampler_params(full_zdts_only_skills, inc_warmup=FALSE)[[1]][,'divergent__']
-div_trans_vector<-c(div_trans_vector,sum(divergent)/(2*(total_iters-warmup_iters)))
+div_trans_vector<-c(div_trans_vector,sum(divergent)/(2*(total_iters-warmup_iters))
+                    )
 deviance_median_vector<-c(deviance_median_vector,deviance_median)
   }
 }
@@ -226,21 +231,21 @@ table_mean_dev<-matrix(mean_dev_vector,ncol=9,nrow=9)
 table_median_dev<-matrix(median_dev_vector,ncol=9,nrow=9)
 table_sd_dev<-matrix(sd_dev_vector,ncol=9,nrow=9)
 table_div_trans<-matrix(div_trans_vector,nrow=9,ncol=9)
-
+table_deviance_median<-matrix(deviance_median_vector,nrow=9,ncol=9)
 # Rounding
 table_min_dev<-round(table_min_dev,1)
 table_div_trans<-round(table_div_trans,2)
 table_median_dev<-round(table_median_dev,1)
 table_mean_dev<-round(table_mean_dev,1)
 table_sd_dev<-round(table_sd_dev,2)
-
+table_deviance_median<-round(table_deviance_median,1)
 #----Save results
 write.csv(table_min_dev,file="table_deviances_zdts_skills.csv")
 write.csv(table_div_trans,file="table_div_trans.csv")
 write.csv(table_median_dev,file="table_median_deviances_zdts_skills.csv")
-write.csv(table_mean_trans,file="table_mean_deviances_zdts_skills.csv")
-write.csv(table_sd_trans,file="table_sd_deviances_zdts_skills.csv")
-
+write.csv(table_mean_dev,file="table_mean_deviances_zdts_skills.csv")
+write.csv(table_sd_dev,file="table_sd_deviances_zdts_skills.csv")
+write.csv(table_deviance_median,file="table_deviance_median_zdts_skills.csv")
 
 
 
