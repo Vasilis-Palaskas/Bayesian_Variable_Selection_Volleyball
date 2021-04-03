@@ -2,11 +2,13 @@
 library(rstan)
 library(coda)
 library(bayesplot)
+library(skellam)
+options(mc.cores = parallel::detectCores())# Activate multiple cores for stan models
 
-# Activate multiple cores for stan models
-options(mc.cores = parallel::detectCores())# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
-# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
+
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
+
 # Load the properly prepared data for both home and away skill events as well as
 # both home and away teams in each match
 load("X_home")
@@ -17,13 +19,15 @@ load("data_zdts_skills")
 
 
 #### Standardization of the Model Matrices for numerical convenience
-X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)
+
+X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)#### Standardization of the Model Matrices for numerical convenience
 
 for (i in 1:dim(X_home)[2]){
   X_home_std[,i]<-scale(X_home[,i])
   X_away_std[,i]<-scale(X_away[,i])
 }
 
+#---Both home and away skills Renaming
 colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
                         "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
                         "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
@@ -35,19 +39,20 @@ colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) 
                         "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
 
-#------------------------------------------
-########-------------- Sensitivity Analysis (Future Meeting 9)
-
-
+#--------
+#-------------- Sensitivity Analysis
+#--------
 ###-----Datalists required for the Bayesian model fitting across several values of c
-###----- c: prior standard deviation multiplicator for betas parameters
-###----- c: prior standard deviation multiplicator for betas parameters
- c_thres<-c(1/20,1/10,1/2,1,2,5,8,9,10)
- c_std<-c(1/20,1/10,1/2,1,2,5,8,9,10)
+
+c_thres<-c(1/20,1/10,1/2,1,2,5,8,9,10)#- c_thres: l1,l2 threshold multiplicator for betas parameters
+c_std<-c(1/20,1/10,1/2,1,2,5,8,9,10)#- c_std: prior standard deviation multiplicator for betas parameters
+zdts_support<-c(-3,-2,-1,1,2,3)#- Support of the random variable of set-difference
 
 ##---Initializing Matrix for minimum deviances-divergent transitions
 
- min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-div_trans_vector<-NULL
+min_dev_vector<-mean_dev_vector<-median_dev_vector<-sd_dev_vector<-
+  div_trans_vector<-deviance_median_vector<-NULL
+
  for (i in c_thres){
      for (j in c_std){
       data_std_thres_zdts_skills<-list(c_thres=i,c_std=j,
@@ -153,11 +158,6 @@ transformed parameters {
 
 model {
   
-  int    sets_diff[n_games];
-  for (g in 1:n_games){
-    sets_diff[g]=home_sets[g]-away_sets[g];
-  }
-  
 
   //Priors
   target+=normal_lpdf(beta_home|0,1*c_std);
@@ -171,16 +171,14 @@ model {
   
   //likelihood-systematic component
   for (g in 1:n_games) {
-    target+=skellam_without_lpmf(sets_diff[g]|lambda1_star[g],lambda2_star[g]) ;
+    target+=skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
   }
   
 }
 generated quantities{
   vector[n_games] log_lik;
- // vector[n_games] log_lik_star;
   real dev;
 
-  //dev=0;
   dev=0;
     for (g in 1:n_games) {
         log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
@@ -188,8 +186,8 @@ generated quantities{
 
     }
 
-  //overall=attack-defense;
-  //DIC=mean(dev)+0.5*variance(dev);
+  overall=attack-defense;
+
 }
 
 "
@@ -197,23 +195,37 @@ generated quantities{
 #---Bayesian ZDTS Models Running
 warmup_iters<-2000
 total_iters<-12000
-full_zdts_skills<-stan(model_code=sensit_betas_zdts_skills_std_thres.stan,
+full_zdts_ta_skills<-stan(model_code=sensit_betas_zdts_skills_std_thres.stan,
                        data= data_std_thres_zdts_skills,thin=1,
-                       chains=1,cores=1,
+                       chains=2,cores=2,
                        iter=total_iters,warmup=warmup_iters,
-                       seed="1234",init_r=1)
+                      init_r=1,seed="1234")
 
 # Extraction of the candidate models' deviances (Table 2)
-dev_full_zdts_skills<-extract(full_zdts_skills,pars="dev")
-
+dev_full_zdts_ta_skills<-extract(full_zdts_ta_skills,pars="dev")
+#----Deviance estimated based on the median of l1, l2 parameters (more stable estimation of the deviance)
+l1_star<-extract(full_zdts_ta_skills,pars="lambda1_star")
+l2_star<-extract(full_zdts_ta_skills,pars="lambda2_star")
+l1_star_median<-apply(l1_star$lambda1_star,2,median)
+l2_star_median<-apply(l2_star$lambda2_star,2,median)
+deviance_median<-0#-Deviance estimated based on the median of l1, l2
+log_lik_median<-NULL#-Log likelihood required estimated based on the median of l1, l2
+for (l in 1:data_std_thres_zdts_skills$n_games){
+  log_lik_median<-log(dskellam(data_std_thres_zdts_skills$home_sets[l]-
+                                 data_std_thres_zdts_skills$away_sets[l],
+                               l1_star_median[l],l2_star_median[l])/sum(
+                                 dskellam(zdts_support,l1_star_median[l],
+                                          l2_star_median[l])))
+  deviance_median=deviance_median-2*log_lik_median
+}
 ##--Summary Statistics of Model Deviances-divergent transitions
-##--Summary Statistics of Model Deviances-divergent transitions
-min_dev_vector<-c(min_dev_vector,min(dev_full_zdts_skills$dev))
-mean_dev_vector<-c(mean_dev_vector,mean(dev_full_zdts_skills$dev))
-sd_dev_vector<-c(sd_dev_vector,sd(dev_full_zdts_skills$dev))
-median_dev_vector<-c(median_dev_vector,median(dev_full_zdts_skills$dev))
-divergent <- get_sampler_params(full_zdts_skills, inc_warmup=FALSE)[[1]][,'divergent__']
-div_trans_vector<-c(div_trans_vector,sum(divergent)/(total_iters-warmup_iters))
+min_dev_vector<-c(min_dev_vector,min(dev_full_zdts_ta_skills$dev))#- Posterior Minimum Deviance
+mean_dev_vector<-c(mean_dev_vector,mean(dev_full_zdts_ta_skills$dev))#-Posterior Mean Deviance
+sd_dev_vector<-c(sd_dev_vector,sd(dev_full_zdts_ta_skills$dev))#-Posterior Std of Deviance
+median_dev_vector<-c(median_dev_vector,median(dev_full_zdts_ta_skills$dev))#-Posterior Median of Deviance
+divergent <- get_sampler_params(full_zdts_ta_skills, inc_warmup=FALSE)[[1]][,'divergent__']#-Posterior Divergent transitions
+div_trans_vector<-c(div_trans_vector,sum(divergent)/(2*(total_iters-warmup_iters)))#-%Posterior Divergent transitions
+deviance_median_vector<-c(deviance_median_vector,deviance_median)#-Deviance estimated based on the median of l1, l2
      }
 }
 #---Tables with summary statistics of deviances and divergent transitions
@@ -222,60 +234,22 @@ table_mean_dev<-matrix(mean_dev_vector,ncol=9,nrow=9)
 table_median_dev<-matrix(median_dev_vector,ncol=9,nrow=9)
 table_sd_dev<-matrix(sd_dev_vector,ncol=9,nrow=9)
 table_div_trans<-matrix(div_trans_vector,nrow=9,ncol=9)
-
+table_deviance_median<-matrix(deviance_median_vector,nrow=9,ncol=9)
 # Rounding
 table_min_dev<-round(table_min_dev,1)
 table_div_trans<-round(table_div_trans,2)
 table_median_dev<-round(table_median_dev,1)
 table_mean_dev<-round(table_mean_dev,1)
 table_sd_dev<-round(table_sd_dev,2)
-
+table_deviance_median<-round(table_deviance_median,1)
 #----Save results
 write.csv(table_min_dev,file="table_deviances_zdts_ta_skills.csv")
-write.csv(table_div_trans,file="table_div_trans_zdts_ta_skills.csv")
+write.csv(table_div_trans,file="table_div_ta_trans.csv")
 write.csv(table_median_dev,file="table_median_deviances_zdts_ta_skills.csv")
-write.csv(table_mean_trans,file="table_mean_deviances_zdts_ta_skills.csv")
-write.csv(table_sd_trans,file="table_sd_deviances_zdts_ta_skills.csv")
+write.csv(table_mean_dev,file="table_mean_deviances_zdts_ta_skills.csv")
+write.csv(table_sd_dev,file="table_sd_deviances_zdts_ta_skills.csv")
+write.csv(table_deviance_median,file="table_deviance_median_zdts_ta_skills.csv")
 
 
-
-
-
-
-
-
-
-
-library(xtable)
-table_min_dev_new<-cbind(c(1/20,1/10,1/2,1,2,5,10),table_min_dev)
-table_min_dev_new<-rbind(c(0,1/2,1,2,5,10),table_min_dev_new)
-xtable(table_min_dev_new)
-#-------------------------------------------------------
-#---Autocorrelation, Trace, Cumsum plots (Not ready yet)
-##-------------------------------------------------------
-
-
-# MCMC Convergence diagnostics
-# a) Firstly, for gammas and betas indicators
-# 
-# convert them to a mcmc object in terms of our convenience
-
-
-mcmc_beta_home_full_zdts_skills<-as.mcmc(beta_home_full_zdts_skills)
-mcmc_beta_away_full_zdts_skills<-as.mcmc(beta_away_full_zdts_skills)
-
-
-##--- MCMC Convergence Diagnostics
-##--- Autocorrelation, Trace and Cumsum Plots
-autocorr.plot(mcmc_beta_home_full_zdts_skills)
-autocorr.plot(mcmc_beta_away_full_zdts_skills)
-
-
-traceplot(mcmc_final_posterior_values_betas_home)
-traceplot(mcmc_beta_away_full_zdts_skills)
-
-
-cumsumplot(mcmc_beta_home_full_zdts_skills)
-cumsumplot(mcmc_beta_away_full_zdts_skills)
 
 
