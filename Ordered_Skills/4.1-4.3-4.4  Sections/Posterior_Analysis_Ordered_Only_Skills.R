@@ -9,6 +9,7 @@ library(bayesplot)
 library(coefplot)
 library(reshape2)
 library(gridExtra)
+library(ggmcmc)
 # Choose the working directory of this file (.../BVS_Paper/Ordered_Skills)
 setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")# Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
 load("datalist_ordered")
@@ -34,7 +35,8 @@ model_data<-list(Y=dataList$Y,X=X_ordered_Skills,n_teams=12,
                  N=dataList$N,K=ncol(X_ordered_Skills),ncat=6)
 
 # Model Run via Rstan
-ordered_skills_after_BVS<-stan("ordered_skills_after_BVS.stan",iter=14000, warmup=2000,chains=2,thin=2,
+ordered_skills_after_BVS<-stan("ordered_skills_after_BVS.stan",iter=24000, 
+                               warmup=4000,chains=2,thin=2,
                                data=model_data,control=list(max_treedepth=15),cores=2)
 
 save(ordered_skills_after_BVS,file="ordered_skills_after_BVS")
@@ -49,49 +51,15 @@ DIC_Gelman<-function(dev){
 
 deviance_ordered_skills_after_BVS<-extract(ordered_skills_after_BVS,pars="dev")$dev
 log_lik_ordered_skills_after_BVS<- extract_log_lik(ordered_skills_after_BVS)
-r_eff_log_lik_ordered_skills_after_BVS<- relative_eff(exp(log_lik_ordered_skills_after_BVS),chain_id=rep(1:2,each=6000))
+r_eff_log_lik_ordered_skills_after_BVS<- relative_eff(exp(log_lik_ordered_skills_after_BVS),
+                                                      chain_id=rep(1:2,each=10000))
 
 # ---WAIC, DIC, LOOIC Bayesian Information Criteria for the ordered logistic with only skills as covariates
 
 waic(log_lik_ordered_skills_after_BVS)####246.8 (19.9)
-loo(log_lik_ordered_skills_after_BVS,r_eff=r_eff_log_lik_ordered_skills_after_BVS)#247.0 (19.9)for model with proper thinning 379,9
+loo(log_lik_ordered_skills_after_BVS,
+    r_eff=r_eff_log_lik_ordered_skills_after_BVS)#247.0 (19.9)for model with proper thinning 379,9
 DIC_Gelman(deviance_ordered_skills_after_BVS)#245.2
-
-###--------------Posterior Summary Statistics-Analysis------------------------########
-
-
-sims <- rstan::extract(ordered_skills_after_BVS)
-
-## coefplot for skill events differences
-skill_events_differences <-   c("failed serve","failed pass",
-                                "perfect att1", "failed att1",
-                                "perfect att2", "failed att2",
-                                "perfect block","failed setting")
-# teams_index <- unique(dataList$home_team)
-beta <- sims$beta
-beta_hat <- apply(beta,2, median)
-beta_sd <- apply(beta,2, sd)
-#teams_index <- match(squadre16_17, teams)
-# att <- att[,3,teams_index]
-# def <- def[,3,teams_index]
-# att_hat <- apply(att,2,median)
-# att_sd <- apply(att,2,sd)
-# def_hat <- apply(def,2,median)
-# def_sd <- apply(def,2,sd)
-ord <- order(beta_hat, decreasing = TRUE)
-# ord_2 <- order(def_hat)
-
-coefplot( rev(beta_hat[ord]), 
-          rev(beta_sd[ord]), 
-          CI=2, 
-          varnames=rev(as.character(skill_events_differences)[ord]), 
-          main="Skill Events Differences (estim. +/- 2 s.e.)\n", 
-          cex.var=1.5, mar=c(1,6,4.5,1),
-          cex.main=1.3,pch=16, cex=2, col="blue")
-
-
-
-
 
 
 
@@ -107,6 +75,22 @@ skill_events_differences <-   c("failed serve","failed pass",
                                 "perfect att2", "failed att2",
                                 "perfect block","failed setting")
 cutpoints<-c("c_1","c_2","c_3","c_4","c_5","c_6")
+
+###--------------Posterior Summary Statistics-Analysis------------------------########
+
+#####----------------------Posterior summary----------------------------######
+
+names(ordered_skills_after_BVS)[1:8]<-skill_events_differences
+names(ordered_skills_after_BVS)[c(9,14:18)]<-cutpoints
+
+
+
+print(ordered_skills_after_BVS,
+      pars=c(
+             "beta","first_temp_Intercept",
+             "temp_Intercept"),probs = c(0.025,0.5,0.975), digits=2)
+
+
 
 ## Extraction of model parameters
 sims <- rstan::extract(ordered_skills_after_BVS)
@@ -145,7 +129,7 @@ color_scheme_set("brightblue")
 
 pdf(file="Ordered_Only_Skills_cutpoints.pdf", width =12, height =7.5)
 
-plot1<-mcmc_intervals(temp_intercepts[,c(temp_intercepts_hat_ord)],
+mcmc_intervals(temp_intercepts[,c(temp_intercepts_hat_ord)],
                       prob = 0.95,prob_outer=0.95,
                       point_est = c( "mean"))+ggtitle("Cutpoints")+xlim(-6,6)+
   scale_x_continuous(breaks = seq(from = -6, to = 6, by = 1))+
@@ -158,10 +142,10 @@ dev.off()
 
 pdf(file="Ordered_Only_Skills_Skills_Differences.pdf", width =12, height =7.5)
 
-plot2<-mcmc_intervals(beta[,c(beta_hat_ord)],
+mcmc_intervals(beta[,c(beta_hat_ord)],
                       prob = 0.95,prob_outer=0.95,
                       point_est = c( "mean"))+ggtitle("Skill Differences")+xlim(-1,1)+
-  scale_x_continuous(breaks = seq(from = -1, to = 1, by = 0.2))+
+  scale_x_continuous(breaks = seq(from = -1, to = 1, by = 0.1))+
   theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
         axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
         axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
@@ -169,29 +153,3 @@ plot2<-mcmc_intervals(beta[,c(beta_hat_ord)],
         plot.title  =element_text( size = 20))
 
 dev.off()
-
-##---Combine 2 plots
-pdf(file="Ordered_Only_Skills_Parameters.pdf", width =13, height =7.5)
-
-  
-  plot1<-mcmc_intervals(temp_intercepts[,c(temp_intercepts_hat_ord)],
-                        prob = 0.95,prob_outer=0.95,
-                        point_est = c( "mean"))+ggtitle("Cutpoints")+xlim(-6,6)+
-    scale_x_continuous(breaks = seq(from = -6, to = 6, by = 1))+
-    theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
-          axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
-          axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
-          axis.title.y = element_text( size = 20, angle = 90, hjust = .5, vjust= 0),
-          plot.title  =element_text( size = 20))
-  plot2<-mcmc_intervals(beta[,c(beta_hat_ord)],
-                        prob = 0.95,prob_outer=0.95,
-                        point_est = c( "mean"))+ggtitle("Skill Differences")+xlim(-1,1)+
-    scale_x_continuous(breaks = seq(from = -1, to = 1, by = 0.2))+
-    theme(axis.text.x = element_text( size = 23, angle = 0, hjust = .5, vjust = .5),
-          axis.text.y = element_text( size = 23, angle = 0, hjust = 1, vjust = 0),  
-          axis.title.x = element_text( size = 20, angle = 0, hjust = .5, vjust = 0),
-          axis.title.y = element_text( size = 20, angle = 90, hjust = .5, vjust= 0),
-          plot.title  =element_text( size = 20))
-  grid.arrange(plot1,plot2,ncol=2)
-
-dev.off() 

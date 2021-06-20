@@ -20,13 +20,9 @@ functions {
       lpmfs[i + 3] = skellam_lpmf(i | mu1, mu2);
     }
     normalization = log_sum_exp(lpmfs);
-    if (abs(mu1- mu2) > 800 )  {
-      log_prob_new=-500;
-      return log_prob_new;
-    } else {
+
       log_prob_new=skellam_lpmf(k|mu1,mu2)-normalization;
       return log_prob_new;
-    }
     
   }
 }
@@ -41,10 +37,9 @@ data {
   matrix[n_games,K] X_away;    // design matrix for (away team's) skills
   int <lower=0,upper=3> home_sets[n_games];//0-3 sets can have each team
   int <lower=0,upper=3> away_sets[n_games];//0-3 sets can have each team
- // real<lower=0> c_thres;//c: upper threshold multiplicator for lambdas parameters
+  real<lower=0> c_thres;//c: upper threshold multiplicator for lambdas parameters
   real<lower=0> c_std;//c: upper threshold multiplicator for lambdas parameters
-  int home_team[n_games];
-  int away_team[n_games];
+ 
 }
 
 parameters {
@@ -53,30 +48,33 @@ parameters {
   vector[K] beta_away;
   real mu;
   real home;
-  real attack_raw[n_teams - 1];
-  real defense_raw[n_teams - 1];
+ 
 }
 
 transformed parameters {
-  // Enforce sum-to-zero constraints
-  vector[n_teams]   attack;
-  vector[n_teams]   defense;
+
+
+  vector[n_games]   lambda1;
+  vector[n_games]   lambda2;
   vector[n_games]   lambda1_star;
   vector[n_games]   lambda2_star; 
-  //vector[n_games]   lambda1;
-  //vector[n_games]   lambda2;
-  
-  for (t in 1:(n_teams-1)) {
-    attack[t] = attack_raw[t];
-    defense[t] = defense_raw[t];
-  }
-  
-  attack[n_teams] = -sum(attack_raw);
-  defense[n_teams] = -sum(defense_raw);
-  // Creation of linear predictor
-  lambda1_star= exp(mu+home+attack[home_team]+defense[away_team]+X_home * beta_home);          
-  lambda2_star= exp(mu+attack[away_team]+defense[home_team]+X_away* beta_away);    
+ 
 
+  // Creation of linear predictor
+  lambda1= exp(mu+home+X_home * beta_home);          
+  lambda2= exp(mu+X_away* beta_away);    
+   for (g in 1:n_games) {
+     if (lambda1[g]>(100*c_thres)){
+      lambda1_star[g]=(100*c_thres);
+    } else {
+       lambda1_star[g]=lambda1[g];
+    }
+    if (lambda2[g]>(100*c_thres)){
+       lambda2_star[g]=(100*c_thres);
+    } else {
+       lambda2_star[g]=lambda2[g];
+     }
+   }
 }
 
 model {
@@ -93,9 +91,7 @@ model {
   target+=normal_lpdf(beta_away|0,1*c_std);
   target+=normal_lpdf(mu|0,0.37);
   target+=normal_lpdf(home|0,0.37);
-  target+=normal_lpdf(attack|0,1);
-  target+=normal_lpdf(defense|0,1);
-  
+
   
   
   //likelihood-systematic component
@@ -114,8 +110,7 @@ generated quantities{
     for (g in 1:n_games) {
         log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
         dev=dev-2*log_lik[g];
-        //log_lik_star[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
-        //dev=dev-2*log_lik_star[g];
+
     }
 
   //overall=attack-defense;

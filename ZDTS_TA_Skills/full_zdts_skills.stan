@@ -129,3 +129,4 @@ generated quantities{
   //DIC=mean(dev)+0.5*variance(dev);
 }
 
+

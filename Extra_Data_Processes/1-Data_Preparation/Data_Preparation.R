@@ -3,17 +3,15 @@
 #Read and further processing of the data
 
 #
-volley<-read.csv(file.choose(),header=T)#Load Data\Final_Regular_Season_data.csv
+volley<-read.csv("C:\\Users\\Bill_\\Desktop\\Github Projects\\Bayesian_Variable_Selection_Volleyball\\Extra_Data_Processes\\Data\\Final_Regular_Season_data.csv",
+                 header=T)#Load Data\Final_Regular_Season_data.csv
 head(volley,30)
-is.data.frame(volley)
 colnames(volley)[3]<-"home_team"
 colnames(volley)[names(volley)=="Team.B"] <-"away_team"
 names(volley)
 str(volley)
 volley$home_team<-as.factor(volley$home_team)
 volley$away_team<-as.factor(volley$away_team)
-View(volley)
-str(volley)
 dim(volley)###494 obs and 52 variab
 
 
@@ -172,4 +170,12 @@ away_att1_perfect,away_att1_blocked,away_att1_error,
 away_att2_perfect,away_att2_blocked,away_att2_error,
 away_block_perfect,away_block_net_violation,away_block_error,away_setting_error)
 
+head(datafr_teams_scores_set_skills,5)
+
+#---Levels
+datafr_teams_scores_set_skills$home_Team<-factor(datafr_teams_scores_set_skills$home_Team)
+datafr_teams_scores_set_skills$away_Team<-factor(datafr_teams_scores_set_skills$away_Team)
+
+levels(datafr_teams_scores_set_skills$home_Team)
+levels(datafr_teams_scores_set_skills$away_Team)
 

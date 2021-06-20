@@ -41,41 +41,37 @@ functions {
 data {
   int <lower=1> n_games; //number of games 132
   int <lower=1> n_teams; //number of teams 12
-  int<lower=1> K;       // Dimension of model matrix (without intercept because mu is our intercept)
-  matrix[n_games, K] X_home;   //Model matrix for home teams
-  matrix[n_games,K] X_away;    // Model matrix for away teams
+  int<lower=1> K_home;       // number of home skill variables
+  int<lower=1> K_away;       // number of home skill variables
+  matrix[n_games, K_home] X_home;   // design matrix for (home team's) skills
+  matrix[n_games,K_away] X_away;    // design matrix for (away team's) skills
   int <lower=0,upper=3> home_sets[n_games];//0-3 sets can have each team
   int <lower=0,upper=3> away_sets[n_games];//0-3 sets can have each team
   int home_team[n_games];
   int away_team[n_games];
-  real<lower=0> c;//c: prior standard deviation multiplicator for betas parameters
-
+  real<lower=0> c_thres;//c: upper threshold multiplicator for lambdas parameters
+  real<lower=0> c_std;//c: upper threshold multiplicator for lambdas parameters
 }
-
-
 parameters {
   
-  vector[K] beta_home_raw;
-  vector[K] beta_away_raw;
+  vector[K_home] beta_home;
+  vector[K_away] beta_away;
   real mu;
   real home;
   real attack_raw[n_teams - 1];
   real defense_raw[n_teams - 1];
 }
 
+
 transformed parameters {
-   // Non-centered parameterizations
-  vector[K] beta_home = beta_home_raw * c;
-  vector[K] beta_away = beta_away_raw * c;
-  // Enforce sum-to-zero constraints
+
   vector[n_teams]   attack;
   vector[n_teams]   defense;
-  
-  vector[n_games]   lambda1_star;
-  vector[n_games]   lambda2_star; 
   vector[n_games]   lambda1;
   vector[n_games]   lambda2;
-  
+  vector[n_games]   lambda1_star;
+  vector[n_games]   lambda2_star; 
+  // Enforce sum-to-zero constraints
   for (t in 1:(n_teams-1)) {
     attack[t] = attack_raw[t];
     defense[t] = defense_raw[t];
@@ -83,59 +79,54 @@ transformed parameters {
   
   attack[n_teams] = -sum(attack_raw);
   defense[n_teams] = -sum(defense_raw);
-  // Creation of linear predictor
-  lambda1_star= exp(mu+home+attack[home_team]+defense[away_team]+X_home * beta_home);          
-  lambda2_star= exp(mu+attack[away_team]+defense[home_team]+X_away* beta_away);  
- 
-  //for (g in 1:n_games) {
-  //  if (lambda1_star[g]>100.0){
-     // lambda1[g]=100.0;
-   // } else {
-    //  lambda1[g]=lambda1_star[g];
-    //}
-    //if (lambda2_star[g]>100.0){
-    //  lambda2[g]=100.0;
-    //} else {
-    //  lambda2[g]=lambda2_star[g];
-    //}
-  
+
+ // Creation of linear predictor
+  lambda1= exp(mu+home+attack[home_team]+defense[away_team]+X_home * beta_home);          
+  lambda2= exp(mu+attack[away_team]+defense[home_team]+X_away* beta_away);    
+   for (g in 1:n_games) {
+     if (lambda1[g]>(100*c_thres)){
+      lambda1_star[g]=(100*c_thres);
+    } else {
+       lambda1_star[g]=lambda1[g];
+    }
+    if (lambda2[g]>(100*c_thres)){
+       lambda2_star[g]=(100*c_thres);
+    } else {
+       lambda2_star[g]=lambda2[g];
+     }
+   }
 }
 
 model {
-  
-  
-  //Priors
-  target += normal_lpdf(beta_home_raw | 0, 1);
-  target += normal_lpdf(beta_away_raw | 0, 1);
+
+    //Priors
+  target+=normal_lpdf(beta_home|0,1*c_std);
+  target+=normal_lpdf(beta_away|0,1*c_std);
   target+=normal_lpdf(mu|0,0.37);
   target+=normal_lpdf(home|0,0.37);
-  target+=normal_lpdf(attack_raw|0,1);
-  target+=normal_lpdf(defense_raw|0,1);
-  
-  
+  target+=normal_lpdf(attack|0,1);
+  target+=normal_lpdf(defense|0,1);
+
   
   //likelihood-systematic component
-  
-  for (g in 1:n_games){
-    target+=skellam_without_lpmf((home_sets[g]-away_sets[g])|lambda1_star[g],lambda2_star[g]);
-    
+  for (g in 1:n_games) {
+    target+=skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
   }
+  
 }
-
 
 generated quantities{
   vector[n_games] log_lik;
+ vector[n_teams]   overall;// overall ability
   real dev;
-   vector[n_teams]   overall;// overall ability
 
-  //real DIC;
-
+  //dev=0;
   dev=0;
-  for (i in 1:n_games) {
-    log_lik[i] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1_star[i],lambda2_star[i]);
-    dev=dev-2*log_lik[i];
-  }
-   overall=attack-defense;
+    for (g in 1:n_games) {
+        log_lik[g] =skellam_without_lpmf(home_sets[g]-away_sets[g]|lambda1_star[g],lambda2_star[g]) ;
+        dev=dev-2*log_lik[g];
+    }
+
+  overall=attack-defense;
   //DIC=mean(dev)+0.5*variance(dev);
 }
-

@@ -38,79 +38,65 @@ functions {
 }
 
 
+
 data {
   int <lower=1> n_games; //number of games 132
   int <lower=1> n_teams; //number of teams 12
   int<lower=1> K_home;       // number of home skill variables
-    int<lower=1> K_away;       // number of home skill variables
+    int<lower=1> K_away;       // number of away skill variables
 
   matrix[n_games, K_home] X_home;   // design matrix for (home team's) skills
   matrix[n_games,K_away] X_away;    // design matrix for (away team's) skills
   int <lower=0,upper=3> home_sets[n_games];//0-3 sets can have each team
   int <lower=0,upper=3> away_sets[n_games];//0-3 sets can have each team
-    int home_team[n_games];
-  int away_team[n_games];
-    real<lower=0> c;//c: 
 }
+
 parameters {
   
-  vector[K_home] beta_home_raw;
-  vector[K_away] beta_away_raw;
+  vector[K_home] beta_home;
+  vector[K_away] beta_away;
   real mu;
   real home;
-  real attack_raw[n_teams - 1];
-  real defense_raw[n_teams - 1];
 }
 
-
 transformed parameters {
-   // Non-centered parameterizations
-  vector[K_home] beta_home = beta_home_raw * c;
-  vector[K_away] beta_away = beta_away_raw * c;
   // Enforce sum-to-zero constraints
-  vector[n_teams]   attack;
-  vector[n_teams]   defense;
-  
+
   vector[n_games]   lambda1_star;
   vector[n_games]   lambda2_star; 
   vector[n_games]   lambda1;
   vector[n_games]   lambda2;
   
-  for (t in 1:(n_teams-1)) {
-    attack[t] = attack_raw[t];
-    defense[t] = defense_raw[t];
-  }
-  
-  attack[n_teams] = -sum(attack_raw);
-  defense[n_teams] = -sum(defense_raw);
   // Creation of linear predictor
-  lambda1_star= exp(mu+home+attack[home_team]+defense[away_team]+X_home * beta_home);          
-  lambda2_star= exp(mu+attack[away_team]+defense[home_team]+X_away* beta_away);  
- //    lambda2=lambda2_star;
- //for (g in 1:n_games) {
-  //  if (lambda1_star[g]>100.0){
-     // lambda1[g]=100.0;
-   // } else {
-    //  lambda1[g]=lambda1_star[g];
-    //}
-    //if (lambda2_star[g]>100.0){
-    //  lambda2[g]=100.0;
-    //} else {
-    //  lambda2[g]=lambda2_star[g];
-    //}
+  lambda1_star= exp(mu+X_home * beta_home+home);          
+  lambda2_star= exp(mu+X_away * beta_away);  
+  // lambda1=lambda1_star;
+  // lambda2=lambda2_star;
+  for (g in 1:n_games) {
+    if (lambda1_star[g]>150.0){
+      lambda1[g]=150.0;
+    } else {
+      lambda1[g]=lambda1_star[g];
+    }
+    if (lambda2_star[g]>150.0){
+      lambda2[g]=150.0;
+    } else {
+      lambda2[g]=lambda2_star[g];
+    }
+  }
 }
 
 model {
 
   
+  //Priors
   
   //Priors
-  target += normal_lpdf(beta_home_raw | 0, 1);
-  target += normal_lpdf(beta_away_raw | 0, 1);
+  target+=normal_lpdf(beta_home|0,1);
+  target+=normal_lpdf(beta_away|0,1);
   target+=normal_lpdf(mu|0,0.37);
   target+=normal_lpdf(home|0,0.37);
-  target+=normal_lpdf(attack_raw|0,1);
-  target+=normal_lpdf(defense_raw|0,1);
+
 
   
   //likelihood-systematic component
@@ -124,7 +110,7 @@ model {
 generated quantities{
   vector[n_games] log_lik;
   real dev;
- vector[n_teams]   overall;// overall ability
+  // vector[n_teams]   overall;// overall ability
 
   //real DIC;
 
@@ -133,6 +119,6 @@ generated quantities{
     log_lik[i] = skellam_without_lpmf(home_sets[i]-away_sets[i] |lambda1[i],lambda2[i]);
     dev=dev-2*log_lik[i];
   }
-   overall=attack-defense;
+  // overall=attack-defense;
   //DIC=mean(dev)+0.5*variance(dev);
 }
