@@ -1,5 +1,6 @@
-
-
+#
+library(sqldf)
+library(dplyr)
 #Read and further processing of the data
 
 #
@@ -10,8 +11,8 @@ colnames(volley)[3]<-"home_team"
 colnames(volley)[names(volley)=="Team.B"] <-"away_team"
 names(volley)
 str(volley)
-volley$home_team<-as.factor(volley$home_team)
-volley$away_team<-as.factor(volley$away_team)
+volley$home_team<-factor(volley$home_team)
+volley$away_team<-factor(volley$away_team)
 dim(volley)###494 obs and 52 variab
 
 
@@ -53,39 +54,36 @@ dim(new_volley)
 
 
 # Rename properly both home and away skill events
-colnames(new_volley)[c(7,8,9,11,12,13,14,16,17,18,20,21,22,24,25,26,28)]<-c("serv_perfect","serv_vg","serv_error",
-"pass_perfect","pass_vg","pass_poor","pass_error","att1_perfect",
-"att1_blocked","att1_error","att2_perfect","att2_blocked","att2_error",
-"block_perfect","block_net_violation","block_error","setting_error")
+colnames(new_volley)[c(6:28)]<-c(
+  "Home_total_serves","Home_perfect_serves","Home_very_good_serves",
+  "Home_failed_serves","Home_total_passes","Home_perfect_passes",
+  "Home_very_good_passes","Home_poor_passes","Home_failed_passes",
+  "Home_total_att1","Home_perfect_att1",
+  "Home_blocked_att1","Home_failed_att1","Home_total_att2",
+  "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
+  "Home_total_blocks", "Home_perfect_blocks", "Home_net_violation_blocks",
+  "Home_failed_blocks","Home_total_settings","Home_failed_settings")
 
-colnames(new_volley)[c(7,8,9,11,12,13,14,16,17,18,20,21,22,24,25,26,28)+25]<-c("serv_perfect","serv_vg","serv_error",
-"pass_perfect","pass_vg","pass_poor","pass_error","att1_perfect",
-"att1_blocked","att1_error","att2_perfect","att2_blocked","att2_error",
-"block_perfect","block_net_violation","block_error","setting_error")
+colnames(new_volley)[c(6:28)+25]<-c(
+  "Away_total_serves","Away_perfect_serves","Away_very_good_serves",
+  "Away_failed_serves","Away_total_passes","Away_perfect_passes",
+  "Away_very_good_passes","Away_poor_passes","Away_failed_passes",
+  "Away_total_att1","Away_perfect_att1",
+  "Away_blocked_att1","Away_failed_att1","Away_total_att2",
+  "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
+  "Away_total_blocks", "Away_perfect_blocks", "Away_net_violation_blocks",
+  "Away_failed_blocks","Away_total_settings","Away_failed_settings")
 
 
+#-----Store only the skills, by each match
+new_volley_skills<-new_volley[,c(2,c(6:28),c(6:28)+25)]
 
+new_volley_skills<-aggregate(. ~ match_day,new_volley_skills, sum)
 # Creating the following variables
 # home score ,team ,skills and away score, team , skills 
 # per match (132 in total)
 
-
 home_score<-away_score<-home_Team<-away_Team<-NULL
-
-
-home_serv_perfect<-home_serv_vg<-home_serv_error<-NULL
-home_pass_perfect<-home_pass_vg<-home_pass_poor<-home_pass_error<-NULL
-home_att1_perfect<-home_att1_blocked<-home_att1_error<-NULL
-home_att2_perfect<-home_att2_blocked<-home_att2_error<-NULL
-home_block_perfect<-home_block_net_violation<-home_block_error<-NULL
-home_setting_error<-NULL
-
-away_serv_perfect<-away_serv_vg<-away_serv_error<-NULL
-away_pass_perfect<-away_pass_vg<-away_pass_poor<-away_pass_error<-NULL
-away_att1_perfect<-away_att1_blocked<-away_att1_error<-NULL
-away_att2_perfect<-away_att2_blocked<-away_att2_error<-NULL
-away_block_perfect<-away_block_net_violation<-away_block_error<-NULL
-away_setting_error<-NULL
 home_points<-away_points<-NULL
 levels(volley$home_team)
 for (i in 1:132) {
@@ -93,89 +91,128 @@ for (i in 1:132) {
  away_score[i]<-length(new_volley$results_set[new_volley$match_day==i & new_volley$results_set==0])
  home_Team[i]<-as.vector(new_volley$home_team[new_volley$match_day==i&new_volley$set==1])
  away_Team[i]<-as.vector(new_volley$away_team[new_volley$match_day==i&new_volley$set==1])
- 
- home_serv_perfect[i]<-sum(new_volley[,7][new_volley$match_day==i])
- home_serv_vg[i]<-sum(new_volley[,8][new_volley$match_day==i ])
- home_serv_error[i]<-sum(new_volley[,9][new_volley$match_day==i ])
- home_pass_perfect[i]<-sum(new_volley[,11][new_volley$match_day==i ])
- home_pass_vg[i]<-sum(new_volley[,12][new_volley$match_day==i ])
- home_pass_poor[i]<-sum(new_volley[,13][new_volley$match_day==i ])
- home_pass_error[i]<-sum(new_volley[,14][new_volley$match_day==i ])
- home_att1_perfect[i]<-sum(new_volley[,16][new_volley$match_day==i ])
- home_att1_blocked[i]<-sum(new_volley[,17][new_volley$match_day==i ])
- home_att1_error[i]<-sum(new_volley[,18][new_volley$match_day==i ])
- home_att2_perfect[i]<-sum(new_volley[,20][new_volley$match_day==i ])
- home_att2_blocked[i]<-sum(new_volley[,21][new_volley$match_day==i ])
- home_att2_error[i]<-sum(new_volley[,22][new_volley$match_day==i ])
- home_block_perfect[i]<-sum(new_volley[,24][new_volley$match_day==i ])
- home_block_net_violation[i]<-sum(new_volley[,25][new_volley$match_day==i ])
- home_block_error[i]<-sum(new_volley[,26][new_volley$match_day==i ])
- home_setting_error[i]<-sum(new_volley[,28][new_volley$match_day==i ])
-
- away_serv_perfect[i]<-sum(new_volley[,32][new_volley$match_day==i ])
- away_serv_vg[i]<-sum(new_volley[,33][new_volley$match_day==i ])
- away_serv_error[i]<-sum(new_volley[,34][new_volley$match_day==i ])
- away_pass_perfect[i]<-sum(new_volley[,36][new_volley$match_day==i ])
- away_pass_vg[i]<-sum(new_volley[,37][new_volley$match_day==i ])
- away_pass_poor[i]<-sum(new_volley[,38][new_volley$match_day==i ])
- away_pass_error[i]<-sum(new_volley[,39][new_volley$match_day==i ])
- away_att1_perfect[i]<-sum(new_volley[,41][new_volley$match_day==i ])
- away_att1_blocked[i]<-sum(new_volley[,42][new_volley$match_day==i ])
- away_att1_error[i]<-sum(new_volley[,43][new_volley$match_day==i ])
- away_att2_perfect[i]<-sum(new_volley[,45][new_volley$match_day==i ])
- away_att2_blocked[i]<-sum(new_volley[,46][new_volley$match_day==i ])
- away_att2_error[i]<-sum(new_volley[,47][new_volley$match_day==i ])
- away_block_perfect[i]<-sum(new_volley[,49][new_volley$match_day==i ])
- away_block_net_violation[i]<-sum(new_volley[,50][new_volley$match_day==i ])
- away_block_error[i]<-sum(new_volley[,51][new_volley$match_day==i ])
- away_setting_error[i]<-sum(new_volley[,53][new_volley$match_day==i ])
  home_points[i]<-sum(new_volley[,5][new_volley$match_day==i ])
  away_points[i]<-sum(new_volley[,30][new_volley$match_day==i ])
 }
 
 # A dataframe (without technical details like passes, serv,...) with only
 # home and away teams as well as their corresponding sets scores ####
-
-
-datafr_teams_scores_set<-data.frame(home_Team,away_Team,home_score,away_score)
-names(datafr_teams_scores_set)
-levels(datafr_teams_scores_set$away_Team)
-
-
-#dim(datafr_teams_scores_set)
-#head(datafr_teams_scores_set,132)
-
-# A dataframe (without technical details like passes, serv,...) and with
-# home , away teams and correspondings points scores. 
-
-datafr_teams_scores_points<-data.frame(home_Team,away_Team,points_difference=home_points-away_points)
-names(datafr_teams_scores_points)
-levels(datafr_teams_scores_set$away_Team)
-dim(datafr_teams_scores_points)
-head(datafr_teams_scores_points,132)
-points_132<-datafr_teams_scores_points
-colnames(points_132)[3]<-"Point difference"
+data_by_sets<-data.frame(new_volley_skills,home_Team,away_Team,
+                         home_sets=home_score,away_sets=away_score,
+                         home_points,away_points)
+head(data_by_sets)
 
 
 
-datafr_teams_scores_set_skills<-data.frame(datafr_teams_scores_set,
-home_serv_perfect,home_serv_vg,home_serv_error,
-home_pass_perfect,home_pass_vg,home_pass_poor,home_pass_error,
-home_att1_perfect,home_att1_blocked,home_att1_error,
-home_att2_perfect,home_att2_blocked,home_att2_error,
-home_block_perfect,home_block_net_violation,home_block_error,home_setting_error,
-away_serv_perfect,away_serv_vg,away_serv_error,
-away_pass_perfect,away_pass_vg,away_pass_poor,away_pass_error,
-away_att1_perfect,away_att1_blocked,away_att1_error,
-away_att2_perfect,away_att2_blocked,away_att2_error,
-away_block_perfect,away_block_net_violation,away_block_error,away_setting_error)
+colnames(data_by_sets)[c(2:24)]<-c(
+  "Home_total_serves","Home_perfect_serves","Home_very_good_serves",
+  "Home_failed_serves","Home_total_passes","Home_perfect_passes",
+  "Home_very_good_passes","Home_poor_passes","Home_failed_passes",
+  "Home_total_att1","Home_perfect_att1",
+  "Home_blocked_att1","Home_failed_att1","Home_total_att2",
+  "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
+  "Home_total_blocks", "Home_perfect_blocks", "Home_net_violation_blocks",
+  "Home_failed_blocks","Home_total_settings","Home_failed_settings")
 
-head(datafr_teams_scores_set_skills,5)
+colnames(data_by_sets)[c(25:47)]<-c(
+  "Away_total_serves","Away_perfect_serves","Away_very_good_serves",
+  "Away_failed_serves","Away_total_passes","Away_perfect_passes",
+  "Away_very_good_passes","Away_poor_passes","Away_failed_passes",
+  "Away_total_att1","Away_perfect_att1",
+  "Away_blocked_att1","Away_failed_att1","Away_total_att2",
+  "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
+  "Away_total_blocks", "Away_perfect_blocks", "Away_net_violation_blocks",
+  "Away_failed_blocks","Away_total_settings","Away_failed_settings")
+
+
+# colnames(data_by_sets)[c(2:24)]<-c(
+#   "(Home) total serves","(Home) perfect serves","(Home) very good serves",
+#   "(Home) failed serves","(Home) total passes","(Home) perfect passes",
+#   "(Home) very good passes","(Home) poor passes","(Home) failed passes",
+#   "(Home) total att1","(Home) perfect att1",
+#   "(Home) blocked att1","(Home) failed att1","(Home) total att2",
+#   "(Home) perfect att2","(Home) blocked att2","(Home) failed att1",
+#   "(Home) total blocks", "(Home) perfect blocks", "(Home) net violation blocks",
+#   "(Home) failed blocks","(Home) total settings","(Home) failed settings")
+# 
+# colnames(data_by_sets)[c(25:47)]<-c(
+#   "(Away) total serves","(Away) perfect serves","(Away) very good serves",
+#   "(Away) failed serves","(Away) total passes","(Away) perfect passes",
+#   "(Away) very good passes","(Away) poor passes","(Away) failed passes",
+#   "(Away) total att1","(Away) perfect att1",
+#   "(Away) blocked att1","(Away) failed att1","(Away) total att2",
+#   "(Away) perfect att2","(Away) blocked att2","(Away) failed att1",
+#   "(Away) total blocks", "(Away) perfect blocks", "(Away) net violation blocks",
+#   "(Away) failed blocks","(Away) total settings","(Away) failed settings")
+
+data_by_sets$points_difference<-data_by_sets$home_points-data_by_sets$away_points
+data_by_sets$sets_difference<-data_by_sets$home_sets-data_by_sets$away_sets
 
 #---Levels
-datafr_teams_scores_set_skills$home_Team<-factor(datafr_teams_scores_set_skills$home_Team)
-datafr_teams_scores_set_skills$away_Team<-factor(datafr_teams_scores_set_skills$away_Team)
+data_by_sets$home_Team<-factor(data_by_sets$home_Team)
+data_by_sets$away_Team<-factor(data_by_sets$away_Team)
 
-levels(datafr_teams_scores_set_skills$home_Team)
-levels(datafr_teams_scores_set_skills$away_Team)
+levels(data_by_sets$home_Team)
+levels(data_by_sets$away_Team)
+head(data_by_sets)
 
+#-----Home transformations
+data_by_sets$Home_precise_passes<-data_by_sets[,"Home_very_good_passes"]+
+                                  data_by_sets[,"Home_perfect_passes"]
+
+data_by_sets$Home_modetate_passes<-data_by_sets[,"Home_total_passes"]-data_by_sets$Home_precise_passes-
+  data_by_sets[,"Home_poor_passes"]-data_by_sets[,"Home_failed_passes"]
+
+data_by_sets$Home_failed_blocks<-data_by_sets[,"Home_net_violation_blocks"]+data_by_sets[,"Home_failed_blocks"]
+
+
+#-----away transformations
+data_by_sets$Away_precise_passes<-data_by_sets[,"Away_very_good_passes"]+
+  data_by_sets[,"Away_perfect_passes"]
+
+data_by_sets$Away_modetate_passes<-data_by_sets[,"Away_total_passes"]-data_by_sets$Away_precise_passes-
+  data_by_sets[,"Away_poor_passes"]-data_by_sets[,"Away_failed_passes"]
+
+data_by_sets$Away_failed_blocks<-data_by_sets[,"Away_net_violation_blocks"]+data_by_sets[,"Away_failed_blocks"]
+
+#---Renames in terms of convenience
+# colnames(data_by_sets)[colnames(data_by_sets)%in%c("Home_precise_passes",
+#                                                    "Home_modetate_passes",
+#                                                   "Home_failed_blocks",
+#                                                   "Away_precise_passes",
+#                                                   "Away_modetate_passes",
+#                                                   "Away_failed_blocks" )]<-c(
+#                                                     "(Home) precise passes",
+#                                                     "(Home) modetate passes",
+#                                                     "(Home) failed blocks",
+#                                                     "(Away) precise passes",
+#                                                     "(Away) modetate passes",
+#                                                     "(Away) failed blocks"
+#                                                   )
+
+save(data_by_sets,file="data_by_sets")
+
+#-----New variables concerning the evaluation of skills
+data_by_sets_new_variables<-data_by_sets[,c(2:47,56:59)]/(data_by_sets$home_points+data_by_sets$away_points)
+colnames(data_by_sets_new_variables)<-paste0(colnames(data_by_sets[,c(2:47,56:59)]),"_ratio_total_points")
+
+data_by_sets<-cbind(data_by_sets,data_by_sets_new_variables)
+
+
+#------X_home skills
+colnames(data_by_sets)
+X_home<-data_by_sets[c("Home_perfect_serves",
+                       "Home_very_good_serves","Home_failed_serves","Home_poor_passes",
+                       "Home_failed_passes","Home_precise_passes","Home_modetate_passes",
+                       "Home_perfect_att1","Home_blocked_att1","Home_failed_att1",
+                       "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
+                       "Home_failed_blocks","Home_perfect_blocks","Home_failed_settings")]
+
+X_away<-data_by_sets[c("Away_perfect_serves",
+                       "Away_very_good_serves","Away_failed_serves","Away_poor_passes",
+                       "Away_failed_passes","Away_precise_passes","Away_modetate_passes",
+                       "Away_perfect_att1","Away_blocked_att1","Away_failed_att1",
+                       "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
+                       "Away_failed_blocks","Away_perfect_blocks","Away_failed_settings")]
+save(X_home,file="X_home_skills")
+save(X_away,file="X_away_skills")
