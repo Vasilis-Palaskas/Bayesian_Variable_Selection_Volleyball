@@ -1,10 +1,10 @@
-#
+# Import libraries for data manipulation
 library(sqldf)
 library(dplyr)
 #Read and further processing of the data
 
 #
-volley<-read.csv("C:\\Users\\Bill_\\Desktop\\Github Projects\\Bayesian_Variable_Selection_Volleyball\\Extra_Data_Processes\\Data\\Final_Regular_Season_data.csv",
+volley<-read.csv(file.choose(),
                  header=T)#Load Data\Final_Regular_Season_data.csv
 head(volley,30)
 colnames(volley)[3]<-"home_team"
@@ -19,7 +19,7 @@ dim(volley)###494 obs and 52 variab
 #New dataframe with corresponding team per set
 # and the corresponding score (for Binomial per set)
 
-#Here we make binary variable results_set
+# Here we make binary variable results_set
 # win set for  home team :1
 # win set for away team :0
 results_set<- c()
@@ -31,7 +31,7 @@ team1 <- match(volley$home_team,teams)
 team2 <- match(volley$away_team, teams)
 nteams <- length(teams)###number of teams in the league : 12
 cont <-1
-match_index <-c()
+match_index <-c()#matchindex=matchday which refers to each match event separately
 match_index[1] <-1
 for (n in 2:length(volley$DAY)){
   if(team1[n]==team1[n-1] ){
@@ -49,8 +49,6 @@ attach(volley)
 new_volley<-data.frame(Week=DAY,match_day=match_index,set=Set,volley[,-c(1,2)],results_set=results_set)
 detach(volley)
 head(new_volley,30)
-names(new_volley)
-dim(new_volley)
 
 
 # Rename properly both home and away skill events
@@ -86,7 +84,7 @@ new_volley_skills<-aggregate(. ~ match_day,new_volley_skills, sum)
 home_score<-away_score<-home_Team<-away_Team<-NULL
 home_points<-away_points<-NULL
 levels(volley$home_team)
-for (i in 1:132) {
+for (i in 1:dim(new_volley_skills)[1]) {
  home_score[i]<-length(new_volley$results_set[new_volley$match_day==i & new_volley$results_set==1])
  away_score[i]<-length(new_volley$results_set[new_volley$match_day==i & new_volley$results_set==0])
  home_Team[i]<-as.vector(new_volley$home_team[new_volley$match_day==i&new_volley$set==1])
@@ -104,25 +102,25 @@ head(data_by_sets)
 
 
 
-colnames(data_by_sets)[c(2:24)]<-c(
-  "Home_total_serves","Home_perfect_serves","Home_very_good_serves",
-  "Home_failed_serves","Home_total_passes","Home_perfect_passes",
-  "Home_very_good_passes","Home_poor_passes","Home_failed_passes",
-  "Home_total_att1","Home_perfect_att1",
-  "Home_blocked_att1","Home_failed_att1","Home_total_att2",
-  "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
-  "Home_total_blocks", "Home_perfect_blocks", "Home_net_violation_blocks",
-  "Home_failed_blocks","Home_total_settings","Home_failed_settings")
-
-colnames(data_by_sets)[c(25:47)]<-c(
-  "Away_total_serves","Away_perfect_serves","Away_very_good_serves",
-  "Away_failed_serves","Away_total_passes","Away_perfect_passes",
-  "Away_very_good_passes","Away_poor_passes","Away_failed_passes",
-  "Away_total_att1","Away_perfect_att1",
-  "Away_blocked_att1","Away_failed_att1","Away_total_att2",
-  "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
-  "Away_total_blocks", "Away_perfect_blocks", "Away_net_violation_blocks",
-  "Away_failed_blocks","Away_total_settings","Away_failed_settings")
+# colnames(data_by_sets)[c(2:24)]<-c(
+#   "Home_total_serves","Home_perfect_serves","Home_very_good_serves",
+#   "Home_failed_serves","Home_total_passes","Home_perfect_passes",
+#   "Home_very_good_passes","Home_poor_passes","Home_failed_passes",
+#   "Home_total_att1","Home_perfect_att1",
+#   "Home_blocked_att1","Home_failed_att1","Home_total_att2",
+#   "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
+#   "Home_total_blocks", "Home_perfect_blocks", "Home_net_violation_blocks",
+#   "Home_failed_blocks","Home_total_settings","Home_failed_settings")
+# 
+# colnames(data_by_sets)[c(25:47)]<-c(
+#   "Away_total_serves","Away_perfect_serves","Away_very_good_serves",
+#   "Away_failed_serves","Away_total_passes","Away_perfect_passes",
+#   "Away_very_good_passes","Away_poor_passes","Away_failed_passes",
+#   "Away_total_att1","Away_perfect_att1",
+#   "Away_blocked_att1","Away_failed_att1","Away_total_att2",
+#   "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
+#   "Away_total_blocks", "Away_perfect_blocks", "Away_net_violation_blocks",
+#   "Away_failed_blocks","Away_total_settings","Away_failed_settings")
 
 
 # colnames(data_by_sets)[c(2:24)]<-c(
@@ -156,63 +154,5 @@ levels(data_by_sets$home_Team)
 levels(data_by_sets$away_Team)
 head(data_by_sets)
 
-#-----Home transformations
-data_by_sets$Home_precise_passes<-data_by_sets[,"Home_very_good_passes"]+
-                                  data_by_sets[,"Home_perfect_passes"]
-
-data_by_sets$Home_modetate_passes<-data_by_sets[,"Home_total_passes"]-data_by_sets$Home_precise_passes-
-  data_by_sets[,"Home_poor_passes"]-data_by_sets[,"Home_failed_passes"]
-
-data_by_sets$Home_failed_blocks<-data_by_sets[,"Home_net_violation_blocks"]+data_by_sets[,"Home_failed_blocks"]
 
 
-#-----away transformations
-data_by_sets$Away_precise_passes<-data_by_sets[,"Away_very_good_passes"]+
-  data_by_sets[,"Away_perfect_passes"]
-
-data_by_sets$Away_modetate_passes<-data_by_sets[,"Away_total_passes"]-data_by_sets$Away_precise_passes-
-  data_by_sets[,"Away_poor_passes"]-data_by_sets[,"Away_failed_passes"]
-
-data_by_sets$Away_failed_blocks<-data_by_sets[,"Away_net_violation_blocks"]+data_by_sets[,"Away_failed_blocks"]
-
-#---Renames in terms of convenience
-# colnames(data_by_sets)[colnames(data_by_sets)%in%c("Home_precise_passes",
-#                                                    "Home_modetate_passes",
-#                                                   "Home_failed_blocks",
-#                                                   "Away_precise_passes",
-#                                                   "Away_modetate_passes",
-#                                                   "Away_failed_blocks" )]<-c(
-#                                                     "(Home) precise passes",
-#                                                     "(Home) modetate passes",
-#                                                     "(Home) failed blocks",
-#                                                     "(Away) precise passes",
-#                                                     "(Away) modetate passes",
-#                                                     "(Away) failed blocks"
-#                                                   )
-
-save(data_by_sets,file="data_by_sets")
-
-#-----New variables concerning the evaluation of skills
-data_by_sets_new_variables<-data_by_sets[,c(2:47,56:59)]/(data_by_sets$home_points+data_by_sets$away_points)
-colnames(data_by_sets_new_variables)<-paste0(colnames(data_by_sets[,c(2:47,56:59)]),"_ratio_total_points")
-
-data_by_sets<-cbind(data_by_sets,data_by_sets_new_variables)
-
-
-#------X_home skills
-colnames(data_by_sets)
-X_home<-data_by_sets[c("Home_perfect_serves",
-                       "Home_very_good_serves","Home_failed_serves","Home_poor_passes",
-                       "Home_failed_passes","Home_precise_passes","Home_modetate_passes",
-                       "Home_perfect_att1","Home_blocked_att1","Home_failed_att1",
-                       "Home_perfect_att2","Home_blocked_att2","Home_failed_att2",
-                       "Home_failed_blocks","Home_perfect_blocks","Home_failed_settings")]
-
-X_away<-data_by_sets[c("Away_perfect_serves",
-                       "Away_very_good_serves","Away_failed_serves","Away_poor_passes",
-                       "Away_failed_passes","Away_precise_passes","Away_modetate_passes",
-                       "Away_perfect_att1","Away_blocked_att1","Away_failed_att1",
-                       "Away_perfect_att2","Away_blocked_att2","Away_failed_att2",
-                       "Away_failed_blocks","Away_perfect_blocks","Away_failed_settings")]
-save(X_home,file="X_home_skills")
-save(X_away,file="X_away_skills")
