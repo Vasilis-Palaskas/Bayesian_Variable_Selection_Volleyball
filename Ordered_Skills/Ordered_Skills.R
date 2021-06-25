@@ -6,21 +6,44 @@ library(ggmcmc)
 # Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
 
 setwd(getwd())
+#---Data Preparation
+source(file.choose())#-Data_Preparation.R
+
+# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
+
+#------Skills for both Home and Away Teams
+X_home<-data_by_sets[c(
+  "Home_perfect_serves","Home_very_good_serves",
+  "Home_failed_serves","Home_perfect_passes","Home_very_good_passes",
+  "Home_poor_passes","Home_failed_passes","Home_perfect_att1",
+  "Home_blocked_att1","Home_failed_att1","Home_perfect_att2",
+  "Home_blocked_att2","Home_failed_att2","Home_perfect_blocks",
+  "Home_net_violation_blocks","Home_failed_blocks","Home_failed_settings")
+]
+
+X_away<-data_by_sets[c(
+  "Away_perfect_serves","Away_very_good_serves",
+  "Away_failed_serves","Away_perfect_passes","Away_very_good_passes",
+  "Away_poor_passes","Away_failed_passes","Away_perfect_att1",
+  "Away_blocked_att1","Away_failed_att1","Away_perfect_att2",
+  "Away_blocked_att2","Away_failed_att2","Away_perfect_blocks",
+  "Away_net_violation_blocks","Away_failed_blocks","Away_failed_settings")
+]
 
 # Load the properly prepared data ("Data_ordered_skills").
-load("datalist_ordered")
-
-head(dataList)
+# load("datalist_ordered")
+# 
 
 #Numerize the factors in terms of your convenience
 dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
       N=dataList$N,K=ncol(dataList$X),ncat=6)
 
 
-
+#--------Step 0: MCMC Pilot run in order to obtain the empirical mean and standard deviation of candidate parameters
 ## Run Full_ordered_skills.stan
-Full_ordered_skills<-stan(file.choose(),iter=12000, warmup=2000,chains=4,thin=2,
-                          data=dataList,control=list(max_treedepth=15),cores=4)
+Full_ordered_skills<-stan(file.choose(),iter=10000, warmup=2000,chains=2,thin=2,
+                          data=dataList,control=list(max_treedepth=15),cores=2)
 
 save(Full_ordered_skills,file="Full_ordered_skills")
 # Load the results from the full ordered logistic model (with all candidate variables).
