@@ -3,9 +3,14 @@ library(rstan)
 library(coda)
 library(bayesplot)
 library(ggmcmc)
-# Choose the working directory of this file (.../BVS_Paper/Ordered_TA_Skills)
-setwd("C:\\Users\\vasileios palaskas\\Desktop\\Github folder\\Bayesian_Variable_Selection_Volleyball\\Ordered_TA_Skills")
-# Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
+# Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
+
+#---Data Preparation
+source(file.choose())#-Data_Preparation.R
+
+# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
+
 #------Skills for both Home and Away Teams
 X_home<-data_by_sets[c(
   "Home_perfect_serves","Home_very_good_serves",
@@ -24,12 +29,6 @@ X_away<-data_by_sets[c(
   "Away_blocked_att2","Away_failed_att2","Away_perfect_blocks",
   "Away_net_violation_blocks","Away_failed_blocks","Away_failed_settings")
 ]
-
-
-
-#----Rename properly the skill variables
-##----Skill events selected via the BVS process based on PSI Median Threshold
-#### Standardization of the Model Matrices for numerical convenience
 
 # Load the properly prepared data ("Data_ordered_skills").
 # load("datalist_ordered")
@@ -77,8 +76,8 @@ teams_points<-paste0(teams," ",observed_points)
 #Numerize the factors in terms of your convenience
 dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff,n_teams=length(levels(data_by_sets$home_Team)),
                N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6,
-	        home_team=as.numeric(dataList$home_team),
-      away_team=as.numeric(dataList$away_team))
+               home_team=as.numeric(data_by_sets$home_Team),
+               away_team=as.numeric(data_by_sets$away_Team))
 
 
 
@@ -119,14 +118,14 @@ T<-30000 # Total MCMC iterations
 # Step 2  
 for (i in 1:T){
   print(i)
+
   # Step 3: Data input needed for running the model through RStan.
   data_varsel<-list(Y=dataList$Y,X=dataList$X,
-                    home_team=as.numeric(dataList$home_team),
-                    away_team=as.numeric(dataList$away_team),n_teams=dataList$n_teams,
-                    N=dataList$N,K=dataList$K,
+                    N=dataList$N,K=dataList$K,n_teams=dataList$n_teams,
+                    home_team=as.numeric(data_by_sets$home_Team),
+                    away_team=as.numeric(data_by_sets$away_Team),
                     ncat=6,gammas=gammas,post_mean_betas=post_mean_betas,
                     post_sd_betas=post_sd_betas)
-  
   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
   ord_volley_skills_all<-stan("Ordered_BVS_TA_Skills.stan",
