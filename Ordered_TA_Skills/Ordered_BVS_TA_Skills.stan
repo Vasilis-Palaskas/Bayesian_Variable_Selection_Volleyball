@@ -10,11 +10,12 @@ data {
   vector[K] gammas; // binary indicators of candidate variables
   vector[K] post_mean_betas; //posterior means of betas from a MCMC pilot run of full model
   vector[K] post_sd_betas; //posterior stan. deviat. of betas from a MCMC pilot run of full model
+  int n_teams;  // total number of matches
   } 
 
 parameters { 
   vector[K] betas;  // parameters of candidate variables 
-  real gen_abil_raw[11]; // general ability parameters (12 teams in total)
+  real gen_abil_raw[n_teams-1]; // general ability parameters (12 teams in total)
   real first_temp_Intercept;        // fake first thresholds
   vector<lower=0>[ncat-2] delta;   // delta parameters in the threshold prior;
 } 
@@ -24,7 +25,7 @@ parameters {
 transformed parameters { 
   ordered[ncat-1] temp_Intercept;  // temporary thresholds
   vector[K] gb; 
-  vector[12]   gen_abil;
+  vector[n_teams]   gen_abil;
   
   temp_Intercept[1] = first_temp_Intercept;
   for (k in 2:(ncat-1)){
@@ -35,7 +36,7 @@ transformed parameters {
     gb[j]=gammas[j]*betas[j];
   }
   // sum to zero constraint for the general ability parameters
-  for (t in 1:(12-1)) {
+  for (t in 1:(n_teams-1)) {
     gen_abil[t] = gen_abil_raw[t];
   }
   gen_abil[12] = -sum(gen_abil_raw);

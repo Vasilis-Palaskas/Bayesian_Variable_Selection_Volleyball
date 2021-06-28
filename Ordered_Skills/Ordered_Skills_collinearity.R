@@ -3,6 +3,7 @@ library(rstan)
 library(coda)
 library(bayesplot)
 library(ggmcmc)
+library(car)
 # Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
 
 #---Data Preparation
@@ -62,17 +63,42 @@ for (i in 1:dim(data_by_sets)[1]){
 }
 #Numerize the factors in terms of your convenience
 dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff,n_teams=length(levels(data_by_sets$home_Team)),
-      N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6)
+               N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6)
+
+#----Collinearity issue checking
+data_full<-data.frame(dataList$Y,dataList$X)
+mfull<-lm(dataList.Y~.,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
+
+#--
+mfull<-lm(dataList.Y~.-perfect_serves,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
 
 
+mfull<-lm(dataList.Y~.-perfect_serves-perfect_blocks,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
+
+mfull<-lm(dataList.Y~.-perfect_serves-perfect_blocks- poor_passes ,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
 #--------Step 0: MCMC Pilot run in order to obtain the empirical mean and standard deviation of candidate parameters
+
+#Numerize the factors in terms of your convenience
+dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff[,!colnames(X_home_diff)%in%c(
+  "perfect_serves","perfect_blocks","poor_passes")],n_teams=length(levels(data_by_sets$home_Team)),
+               N=dim(data_by_sets)[1],K=ncol(X_home_diff[,!colnames(X_home_diff)%in%c(
+                 "perfect_serves","perfect_blocks","poor_passes")]),ncat=6)
+
 ## Run Full_ordered_skills.stan
 Full_ordered_skills<-stan(file.choose(),iter=10000, warmup=2000,chains=2,thin=2,
                           data=dataList,control=list(max_treedepth=15),cores=2)
 
-save(Full_ordered_skills,file="Full_ordered_skills")
+save(Full_ordered_skills,file="Full_ordered_skills_collinearity")
 # Load the results from the full ordered logistic model (with all candidate variables).
-load(file="Full_ordered_skills")
+load(file="Full_ordered_skills_collinearity")
 
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
@@ -94,7 +120,7 @@ betas<-post_mean_betas
 # Prepare the vectors with the posterior samples of dimension Txp (p=K during algorithm iterations) for all gammas and betas coefficients , respectively.
 gammas_matrix<-betas_matrix<-NULL
 
- setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")
 
 T<-10000 # Total MCMC iterations
 # Step 2  
@@ -150,10 +176,10 @@ for (i in 1:T){
 }
 
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
-save(gammas_matrix,file="BVS_Ordered_Skills_gammas")
-save(betas_matrix,file="BVS_Ordered_Skills_betas")
-load("BVS_Ordered_Skills_gammas")
-load("BVS_Ordered_Skills_betas")
+save(gammas_matrix,file="BVS_Ordered_Skills_gammas_collinearity")
+save(betas_matrix,file="BVS_Ordered_Skills_betas_collinearity")
+load("BVS_Ordered_Skills_gammas_collinearity")
+load("BVS_Ordered_Skills_betas_collinearity")
 gammas_matrix<-gammas_matrix[ c(1:(dataList$K*T))]
 betas_matrix<-betas_matrix[ c(1:(dataList$K*T))]
 
@@ -203,14 +229,14 @@ gg_posterior_values_gammas<- ggs(mcmc_final_posterior_values_gammas)
 #----Step2: Save in a single pdf all the necessary plots for the assessment of the convergence
 ggmcmc(gg_posterior_values_betas, 
        file = "converg_betas_ordered_bvs_skills.pdf", plot=c( "running",
-                                                               "geweke","Rhat","autocorrelation"))
+                                                              "geweke","Rhat","autocorrelation"))
 
 
 
 ggmcmc(gg_posterior_values_gammas, 
        file = "converg_gammas_ordered_bvs_skills.pdf", plot=c( "running",
-                                     "geweke","Rhat","autocorrelation"))
-       
+                                                               "geweke","Rhat","autocorrelation"))
+
 # pdf(file="trace_plots_betas_away_bvs.pdf", width =16, height =9)
 # mcmc_trace(final_posterior_values_betas_away_array)
 # dev.off()

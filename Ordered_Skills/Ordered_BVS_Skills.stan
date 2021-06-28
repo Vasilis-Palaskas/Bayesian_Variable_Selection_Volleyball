@@ -9,6 +9,8 @@ data {
   vector[K] gammas; // binary indicators of candidate variables
   vector[K] post_mean_betas; //posterior means of betas from a MCMC pilot run of full model
   vector[K] post_sd_betas; //posterior stan. deviat. of betas from a MCMC pilot run of full model
+    int n_teams;  // total number of matches
+
   } 
 
 parameters { 

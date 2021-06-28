@@ -10,36 +10,70 @@ library(coefplot)
 library(reshape2)
 library(gridExtra)
 library(ggmcmc)
-# Choose the working directory of this file (.../BVS_Paper/Ordered_Skills)
-setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")# Load the properly full prepared data ("datalist_ordered") for the ordered logistic models.
-load("datalist_ordered")
+
+#---Data Preparation
+source(file.choose())#-Data_Preparation.R
 
 # Choose the working directory of this file (.../BVS_Paper/Ordered_Skills/4.1-... Sections)
 
 setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills/4.1-4.3-4.4  Sections")
 #----Rename properly the skill variables
 
-names(dataList$X)<-c("perfect serve","very good serve","failed serve","perfect pass","very good pass",
-                     "poor pass","failed pass","perfect att1","blocked att1",
-                     "failed att1","perfect att2","blocked att2","failed att2","perfect block",
-                     "block net violation","failed block","failed setting")
-##----Skill events selected via the BVS process based on PSI Median Threshold
-skill_events<-dataList$X
+# names(dataList$X)<-c("perfect serve","very good serve","failed serve","perfect pass","very good pass",
+#                      "poor pass","failed pass","perfect att1","blocked att1",
+#                      "failed att1","perfect att2","blocked att2","failed att2","perfect block",
+#                      "block net violation","failed block","failed setting")
+# Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
+# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
 
+#------Skills for both Home and Away Teams
+X_home<-data_by_sets[c(
+  "Home_perfect_serves","Home_very_good_serves",
+  "Home_failed_serves","Home_perfect_passes","Home_very_good_passes",
+  "Home_poor_passes","Home_failed_passes","Home_perfect_att1",
+  "Home_blocked_att1","Home_failed_att1","Home_perfect_att2",
+  "Home_blocked_att2","Home_failed_att2","Home_perfect_blocks",
+  "Home_net_violation_blocks","Home_failed_blocks","Home_failed_settings")
+]
+
+X_away<-data_by_sets[c(
+  "Away_perfect_serves","Away_very_good_serves",
+  "Away_failed_serves","Away_perfect_passes","Away_very_good_passes",
+  "Away_poor_passes","Away_failed_passes","Away_perfect_att1",
+  "Away_blocked_att1","Away_failed_att1","Away_perfect_att2",
+  "Away_blocked_att2","Away_failed_att2","Away_perfect_blocks",
+  "Away_net_violation_blocks","Away_failed_blocks","Away_failed_settings")
+]
+
+# Load the properly prepared data ("Data_ordered_skills").
+# load("datalist_ordered")
+
+X_home_diff<-data.frame(X_home-X_away)
+colnames(X_home_diff)<-c(
+  "perfect_serves","very_good_serves",
+  "failed_serves","perfect_passes","very_good_passes",
+  "poor_passes","failed_passes","perfect_att1",
+  "blocked_att1","failed_att1","perfect_att2",
+  "blocked_att2","failed_att2","perfect_blocks",
+  "net_violation_blocks","failed_blocks","failed_settings")
+##  Model 5: After inclusion only variables not being collinear with each other (by excluding them based on VIFs)
+##  we will run a model including only skill actions emerged by the Gibbs Variable Selection implemented to those not-collinear variables
+skill_events<-X_home_diff
 X_ordered_Skills<-skill_events[,colnames(skill_events)%in%
-                                 c("failed serve","failed pass",
-                                   "perfect att1", "failed att1",
-                                   "perfect att2", "failed att2",
-                                   "perfect block","failed setting") ]
-model_data<-list(Y=dataList$Y,X=X_ordered_Skills,n_teams=12,
-                 N=dataList$N,K=ncol(X_ordered_Skills),ncat=6)
+                                 c("failed_serves","failed_passes",
+                                   "perfect_att1", "blocked_att1","failed_att1",
+                                   "perfect_att2","blocked_att2", "failed_att2",
+                                   "failed_settings") ]
+model_data<-list(Y=data_by_sets$sets_difference_factor,X=X_ordered_Skills,n_teams=
+                   length(levels(data_by_sets$home_Team)),
+                 N=dim(data_by_sets)[1],K=ncol(X_ordered_Skills),ncat=6)
 
-# Model Run via Rstan
-ordered_skills_after_BVS<-stan("ordered_skills_after_BVS.stan",iter=24000, 
-                               warmup=4000,chains=2,thin=2,
-                               data=model_data,control=list(max_treedepth=15),cores=2)
 
-save(ordered_skills_after_BVS,file="ordered_skills_after_BVS")
+ordered_skills_after_BVS_model5<-stan("ordered_skills_after_BVS.stan",iter=14000, warmup=2000,chains=2,thin=2,
+                                      data=model_data,control=list(max_treedepth=15),cores=2)
+
+
+save(ordered_skills_after_BVS_model5,file="ordered_skills_after_BVS")
 
 ###--------------Predictive Model Performance Evaluation-------------------------########
 # Calculation of the DIC (Gelman,2004)
@@ -70,22 +104,22 @@ DIC_Gelman(deviance_ordered_skills_after_BVS)#245.2
 ######-------------ordered Logistic model with only skills
 ##---Parameters Names
 
-skill_events_differences <-   c("failed serve","failed pass",
-                                "perfect att1", "failed att1",
-                                "perfect att2", "failed att2",
-                                "perfect block","failed setting")
+skill_events_differences <-  c("failed_serves","failed_passes",
+                               "perfect_att1", "blocked_att1","failed_att1",
+                               "perfect_att2","blocked_att2", "failed_att2",
+                               "failed_settings")
 cutpoints<-c("c_1","c_2","c_3","c_4","c_5","c_6")
 
 ###--------------Posterior Summary Statistics-Analysis------------------------########
 
 #####----------------------Posterior summary----------------------------######
 
-names(ordered_skills_after_BVS)[1:8]<-skill_events_differences
-names(ordered_skills_after_BVS)[c(9,14:18)]<-cutpoints
+names(ordered_skills_after_BVS_model5)[1:9]<-skill_events_differences
+names(ordered_skills_after_BVS_model5)[c(10,15:19)]<-cutpoints
 
 
 
-print(ordered_skills_after_BVS,
+print(ordered_skills_after_BVS_model5,
       pars=c(
              "beta","first_temp_Intercept",
              "temp_Intercept"),probs = c(0.025,0.5,0.975), digits=2)
@@ -93,7 +127,7 @@ print(ordered_skills_after_BVS,
 
 
 ## Extraction of model parameters
-sims <- rstan::extract(ordered_skills_after_BVS)
+sims <- rstan::extract(ordered_skills_after_BVS_model5)
 
 beta <- sims$beta
 first_temp_Intercept<- sims$first_temp_Intercept
