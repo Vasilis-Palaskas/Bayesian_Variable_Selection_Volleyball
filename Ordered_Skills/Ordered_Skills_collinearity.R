@@ -3,6 +3,7 @@ library(rstan)
 library(coda)
 library(bayesplot)
 library(ggmcmc)
+library(car)
 # Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
 
 #---Data Preparation
@@ -60,42 +61,50 @@ for (i in 1:dim(data_by_sets)[1]){
   }
   
 }
-## Vector of teams names along with
-## their ranking positions, points, abilities
-teams <- levels(data_by_sets$home_Team)
-observed_positions<-c("(7)","(6)","(9)","(8)","(5)","(11)","(1)","(12)","(4)","(10)","(3)","(2)")
-observed_points<-c("(36)","(37)","(16)","(28)","(38)","(14)","(62)","(7)","(39)","(16)","(50)","(53)")
-
-
-teams_attack<-paste0(teams," ","Attack")
-teams_defense<-paste0(teams," ","Defense")
-teams_over<-paste0(teams," ","Overall")
-
-teams_pos<-paste0(teams," ",observed_positions)
-teams_points<-paste0(teams," ",observed_points)
 #Numerize the factors in terms of your convenience
 dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff,n_teams=length(levels(data_by_sets$home_Team)),
-               N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6,
-               home_team=as.numeric(data_by_sets$home_Team),
-               away_team=as.numeric(data_by_sets$away_Team))
+               N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6)
+
+#----Collinearity issue checking
+data_full<-data.frame(dataList$Y,dataList$X)
+mfull<-lm(dataList.Y~.,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
+
+#--
+mfull<-lm(dataList.Y~.-perfect_serves,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
 
 
+mfull<-lm(dataList.Y~.-perfect_serves-perfect_blocks,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
+
+mfull<-lm(dataList.Y~.-perfect_serves-perfect_blocks- poor_passes ,data=data_full)
+vif(mfull)
+round(vif(mfull),1)
+#--------Step 0: MCMC Pilot run in order to obtain the empirical mean and standard deviation of candidate parameters
+
+#Numerize the factors in terms of your convenience
+dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff[,!colnames(X_home_diff)%in%c(
+  "perfect_serves","perfect_blocks","poor_passes")],n_teams=length(levels(data_by_sets$home_Team)),
+               N=dim(data_by_sets)[1],K=ncol(X_home_diff[,!colnames(X_home_diff)%in%c(
+                 "perfect_serves","perfect_blocks","poor_passes")]),ncat=6)
 
 ## Run Full_ordered_skills.stan
-Full_ordered_team_abilities_skills<-stan("Full_ordered_team_abilities_skills.stan",iter=10000, warmup=2000,
-                                         chains=2,thin=2,
-                                         data=dataList,control=list(max_treedepth=15),cores=2)
+Full_ordered_skills<-stan(file.choose(),iter=10000, warmup=2000,chains=2,thin=2,
+                          data=dataList,control=list(max_treedepth=15),cores=2)
 
-#save(Full_ordered_team_abilities_skills,file="Full_ordered_team_abilities_skills")
+save(Full_ordered_skills,file="Full_ordered_skills_collinearity")
+# Load the results from the full ordered logistic model (with all candidate variables).
+load(file="Full_ordered_skills_collinearity")
 
-# Load the results from the full ordered logistic model (including both team abilities and all candidate variables).
-load(file="Full_ordered_team_abilities_skills")
+# Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
-# Extract the posterior summary statistics of both candidate variables' parameters and the rest of other parameters.
 
-betas_summary<-summary(Full_ordered_team_abilities_skills,pars = c("beta"))$summary
-gen_abil_raw_summary<-summary(Full_ordered_team_abilities_skills,pars = c("gen_abil_raw"))$summary
-intercept_summary<-summary(Full_ordered_team_abilities_skills, pars = c("temp_Intercept"))$summary
+betas_summary<-summary(Full_ordered_skills,pars = c("beta"))$summary
+intercept_summary<-summary(Full_ordered_skills, pars = c("temp_Intercept"))$summary
 
 # Use their posterior means and standard deviations for both initial values specification and prior specification.
 
@@ -107,30 +116,27 @@ post_sd_betas<-betas_summary[1:dataList$K,3]
 gammas<-rep(1,dataList$K)# All the candidate variables included in the model
 temp_Intercept<-intercept_summary[,1]
 betas<-post_mean_betas
-gen_abil_raw<-gen_abil_raw_summary[,1]
 
 # Prepare the vectors with the posterior samples of dimension Txp (p=K during algorithm iterations) for all gammas and betas coefficients , respectively.
 gammas_matrix<-betas_matrix<-NULL
 
-setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_TA_Skills")
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")
 
-T<-30000 # Total MCMC iterations
+T<-10000 # Total MCMC iterations
 # Step 2  
 for (i in 1:T){
   print(i)
-
   # Step 3: Data input needed for running the model through RStan.
   data_varsel<-list(Y=dataList$Y,X=dataList$X,
                     N=dataList$N,K=dataList$K,n_teams=dataList$n_teams,
-                    home_team=as.numeric(data_by_sets$home_Team),
-                    away_team=as.numeric(data_by_sets$away_Team),
                     ncat=6,gammas=gammas,post_mean_betas=post_mean_betas,
                     post_sd_betas=post_sd_betas)
+  
   # Step 4:Run the model through RStan for one sampling iteration (20 warm up and 21 total iterations, 21-20=1 sampling iteration) in order to update the betas from the full conditional posterior distributions. 
   # Use the previous iteration's parameter values as initial parameter values so MCMC Algorithm can begin.
-  ord_volley_skills_all<-stan("Ordered_BVS_TA_Skills.stan",
+  ord_volley_skills_all<-stan("Ordered_BVS_Skills.stan",
                               data=data_varsel,chains=1,
-                              iter=21,warmup=20,init=list(list(betas=betas,temp_Intercept=temp_Intercept,gen_abil_raw=gen_abil_raw)),
+                              iter=21,warmup=20,init=list(list(betas=betas,temp_Intercept=temp_Intercept)),
                               control=list(adapt_window=15,adapt_init_buffer=3,adapt_term_buffer=2))
   
   # Initialize the log-likelihood for both cases 0 and 1 for gammas indicators/coefficients.
@@ -138,10 +144,9 @@ for (i in 1:T){
   log_point_one<-matrix(NA,nrow=data_varsel$N,ncol=data_varsel$K)  #  matrix with log likelihoods when gamma[j]=1
   
   # Extract both model's parameters and log-likelihoods for both cases of gammas indicators.
-  par<-extract(ord_volley_skills_all)
+  par<-rstan::extract(ord_volley_skills_all)
   temp_Intercept<-par$temp_Intercept[1,]
   betas<-par$betas[1,]
-  gen_abil_raw<-par$gen_abil_raw[1,]
   log_point_zero<-par$log_lik_zero[1,,]
   log_point_one<-par$log_lik_one[1,,]
   
@@ -169,42 +174,38 @@ for (i in 1:T){
   gammas_matrix<-c(gammas_matrix,gammas)
   betas_matrix<-c(betas_matrix,betas)
 }
-save(gammas_matrix,file="BVS_Ordered_TA_Skills_gammas")
-save(betas_matrix,file="BVS_Ordered_TA_Skills_betas")
-load("BVS_Ordered_TA_Skills_gammas")
-load("BVS_Ordered_TA_Skills_betas")
+
 # Save these values in order to manipulate them in terms of convergence diagnostics,, posterior summary statistics, etc...
+save(gammas_matrix,file="BVS_Ordered_Skills_gammas_collinearity")
+save(betas_matrix,file="BVS_Ordered_Skills_betas_collinearity")
+load("BVS_Ordered_Skills_gammas_collinearity")
+load("BVS_Ordered_Skills_betas_collinearity")
+gammas_matrix<-gammas_matrix[ c(1:(dataList$K*T))]
+betas_matrix<-betas_matrix[ c(1:(dataList$K*T))]
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
-warmup<-6000
+warmup<-3000
+# warmup<-54
+# T<-156
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_gammas<-matrix(gammas_matrix[(dataList$K*warmup+1):length(gammas_matrix)],
                                       nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
 # Each column includes the gammas values of each candidate variable.
 final_posterior_values_betas<-matrix(betas_matrix[(dataList$K*warmup+1):length(betas_matrix)],
                                      nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
-# Prepare a dataframe with column names the names of candidate variables.
+# Prepare a dataframe by assigning in the variables names the corresponding column names.
 df_final_posterior_values_gammas<-as.data.frame(final_posterior_values_gammas)
-names(dataList$X)<-c("perfect serve","very good serve","failed serve"," perfect pass",
-                     "very good pass","poor pass","failed pass","perfect att1","blocked att1",
-                     "failed att1","perfect att2","blocked att2","failed att2","perfect block",
-                     "block net violation","failed block","failed setting")
+# names(dataList$X)<-c(
+#   "perfect_serves","very_good_serves",
+#   "failed_serves","perfect_passes","very_good_passes",
+#   "poor_passes","failed_passes","perfect_att1",
+#   "blocked_att1","failed_att1","perfect_att2",
+#   "blocked_att2","failed_att2","perfect_blocks",
+#   "net_violation_blocks","failed_blocks","failed_settings")
 colnames(df_final_posterior_values_gammas)<-names(dataList$X)
 # Step 8: Obtain the posterior inclusion probabilities for each one candidate variable
-posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),3)
+posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),2)
 print(posterior_inclusion_probabilities)
-
-### MCMC Convergence Checking
-# 
-# a) Firstly, for gammas and betas indicators
-# 
-## convert them to a mcmc pobject in terms of our convenience
-mcmc_final_posterior_values_gammas<-as.mcmc(final_posterior_values_gammas)
-colnames(mcmc_final_posterior_values_gammas)<-names(dataList$X)
-mcmc_final_posterior_values_betas<-as.mcmc(final_posterior_values_betas)
-colnames(mcmc_final_posterior_values_betas)<-names(dataList$X)
-
-
 
 
 ### MCMC Convergence Checking
@@ -227,19 +228,21 @@ gg_posterior_values_gammas<- ggs(mcmc_final_posterior_values_gammas)
 
 #----Step2: Save in a single pdf all the necessary plots for the assessment of the convergence
 ggmcmc(gg_posterior_values_betas, 
-       file = "converg_betas_ordered_bvs_ta_skills.pdf", plot=c( "running",
+       file = "converg_betas_ordered_bvs_skills.pdf", plot=c( "running",
                                                               "geweke","Rhat","autocorrelation"))
 
 
 
 ggmcmc(gg_posterior_values_gammas, 
-       file = "converg_gammas_ordered_bvs_ta_skills.pdf", plot=c( "running",
+       file = "converg_gammas_ordered_bvs_skills.pdf", plot=c( "running",
                                                                "geweke","Rhat","autocorrelation"))
 
-
+# pdf(file="trace_plots_betas_away_bvs.pdf", width =16, height =9)
+# mcmc_trace(final_posterior_values_betas_away_array)
+# dev.off()
 
 # ###----Betas 
-pdf(file="cumul_plots_betas_ordered_bvs_ta_skills.pdf", width =16, height =9)
+pdf(file="cumul_plots_betas_ordered_bvs_skills.pdf", width =16, height =9)
 
 
 par(mfrow=c(5,4))
@@ -301,7 +304,7 @@ dev.off()
 
 
 ###----gammas home
-pdf(file="cumul_plots_gammas_ordered_bvs_ta_skills.pdf", width =16, height =9)
+pdf(file="cumul_plots_gammas_ordered_bvs_skills.pdf", width =16, height =9)
 
 
 par(mfrow=c(5,4))

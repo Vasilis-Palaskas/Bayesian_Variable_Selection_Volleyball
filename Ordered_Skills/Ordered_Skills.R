@@ -5,7 +5,6 @@ library(bayesplot)
 library(ggmcmc)
 # Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
 
-setwd(getwd())
 #---Data Preparation
 source(file.choose())#-Data_Preparation.R
 
@@ -33,11 +32,37 @@ X_away<-data_by_sets[c(
 
 # Load the properly prepared data ("Data_ordered_skills").
 # load("datalist_ordered")
-# 
 
+X_home_diff<-data.frame(X_home-X_away)
+colnames(X_home_diff)<-c(
+  "perfect_serves","very_good_serves",
+  "failed_serves","perfect_passes","very_good_passes",
+  "poor_passes","failed_passes","perfect_att1",
+  "blocked_att1","failed_att1","perfect_att2",
+  "blocked_att2","failed_att2","perfect_blocks",
+  "net_violation_blocks","failed_blocks","failed_settings")
+
+#---Transform set difference values in terms of fitting for ordered multinomial model (requires positive integers or factors)
+data_by_sets$sets_difference_factor<-data_by_sets$sets_difference
+for (i in 1:dim(data_by_sets)[1]){
+  if (data_by_sets$sets_difference[i]==(-3)){
+    data_by_sets$sets_difference_factor[i]<-1
+  } else if (data_by_sets$sets_difference[i]==(-2)){
+    data_by_sets$sets_difference_factor[i]<-2
+  } else if (data_by_sets$sets_difference[i]==(-1)){
+    data_by_sets$sets_difference_factor[i]<-3
+  } else if (data_by_sets$sets_difference[i]==(1)){
+    data_by_sets$sets_difference_factor[i]<-4
+  } else if (data_by_sets$sets_difference[i]==(2)){
+    data_by_sets$sets_difference_factor[i]<-5
+  } else if (data_by_sets$sets_difference[i]==(3)){
+    data_by_sets$sets_difference_factor[i]<-6
+  }
+  
+}
 #Numerize the factors in terms of your convenience
-dataList<-list(Y=dataList$Y,X=dataList$X,n_teams=12,
-      N=dataList$N,K=ncol(dataList$X),ncat=6)
+dataList<-list(Y=data_by_sets$sets_difference_factor,X=X_home_diff,n_teams=length(levels(data_by_sets$home_Team)),
+      N=dim(data_by_sets)[1],K=ncol(X_home_diff),ncat=6)
 
 
 #--------Step 0: MCMC Pilot run in order to obtain the empirical mean and standard deviation of candidate parameters
@@ -69,14 +94,15 @@ betas<-post_mean_betas
 # Prepare the vectors with the posterior samples of dimension Txp (p=K during algorithm iterations) for all gammas and betas coefficients , respectively.
 gammas_matrix<-betas_matrix<-NULL
 
+ setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/Ordered_Skills")
 
-T<-30000 # Total MCMC iterations
+T<-10000 # Total MCMC iterations
 # Step 2  
 for (i in 1:T){
   print(i)
   # Step 3: Data input needed for running the model through RStan.
   data_varsel<-list(Y=dataList$Y,X=dataList$X,
-                    N=dataList$N,K=dataList$K,
+                    N=dataList$N,K=dataList$K,n_teams=dataList$n_teams,
                     ncat=6,gammas=gammas,post_mean_betas=post_mean_betas,
                     post_sd_betas=post_sd_betas)
   
@@ -92,7 +118,7 @@ for (i in 1:T){
   log_point_one<-matrix(NA,nrow=data_varsel$N,ncol=data_varsel$K)  #  matrix with log likelihoods when gamma[j]=1
   
   # Extract both model's parameters and log-likelihoods for both cases of gammas indicators.
-  par<-extract(ord_volley_skills_all)
+  par<-rstan::extract(ord_volley_skills_all)
   temp_Intercept<-par$temp_Intercept[1,]
   betas<-par$betas[1,]
   log_point_zero<-par$log_lik_zero[1,,]
@@ -128,9 +154,11 @@ save(gammas_matrix,file="BVS_Ordered_Skills_gammas")
 save(betas_matrix,file="BVS_Ordered_Skills_betas")
 load("BVS_Ordered_Skills_gammas")
 load("BVS_Ordered_Skills_betas")
+gammas_matrix<-gammas_matrix[ c(1:(dataList$K*T))]
+betas_matrix<-betas_matrix[ c(1:(dataList$K*T))]
 
 # Store both gammas and betas posterior values after discarding the warmup from T iterations (here, we have chosen to discard the 20% of total T iterations).
-warmup<-6000
+warmup<-3000
 # warmup<-54
 # T<-156
 # Each column includes the gammas values of each candidate variable.
@@ -141,13 +169,16 @@ final_posterior_values_betas<-matrix(betas_matrix[(dataList$K*warmup+1):length(b
                                      nrow=T-warmup,ncol=dataList$K,byrow=TRUE)
 # Prepare a dataframe by assigning in the variables names the corresponding column names.
 df_final_posterior_values_gammas<-as.data.frame(final_posterior_values_gammas)
-names(dataList$X)<-c("perfect serve","very good serve","failed serve"," perfect pass",
-                     "very good pass","poor pass","failed pass","perfect att1","blocked att1",
-                     "failed att1","perfect att2","blocked att2","failed att2","perfect block",
-                     "block net violation","failed block","failed setting")
+# names(dataList$X)<-c(
+#   "perfect_serves","very_good_serves",
+#   "failed_serves","perfect_passes","very_good_passes",
+#   "poor_passes","failed_passes","perfect_att1",
+#   "blocked_att1","failed_att1","perfect_att2",
+#   "blocked_att2","failed_att2","perfect_blocks",
+#   "net_violation_blocks","failed_blocks","failed_settings")
 colnames(df_final_posterior_values_gammas)<-names(dataList$X)
 # Step 8: Obtain the posterior inclusion probabilities for each one candidate variable
-posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),3)
+posterior_inclusion_probabilities<-round(apply(df_final_posterior_values_gammas,2,mean),2)
 print(posterior_inclusion_probabilities)
 
 

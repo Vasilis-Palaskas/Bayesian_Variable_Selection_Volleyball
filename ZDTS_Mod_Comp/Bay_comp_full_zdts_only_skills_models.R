@@ -60,8 +60,8 @@ X_away<-data_by_sets[c(
 
 X_home_std<-data.frame(scale(X_home,center=T,scale=T) )
 X_away_std<-data.frame(scale(X_away,center=T,scale=T) )
-X_home_diff<-data.frame(scale(X_home-X_away,center=T,scale=T) )
-X_away_diff<-data.frame(scale(X_away-X_home,center=T,scale=T) )
+X_home_diff_std<-data.frame(scale(X_home-X_away,center=T,scale=T) )
+X_away_diff_std<-data.frame(scale(X_away-X_home,center=T,scale=T) )
 
 
 #---Datalist required for the ZDTS with TA+Skills
@@ -83,8 +83,8 @@ data_skills_differences<-list(c_thres=2,c_std=5,
                               away_team=as.numeric(data_by_sets$away_Team),
                               home_team=as.numeric(data_by_sets$home_Team),
                               n_teams=length(levels(data_by_sets$home_Team)),
-                              X_home_diff=X_home_diff,
-                              X_away_diff=X_away_diff,
+                              X_home_diff=X_home_diff_std,
+                              X_away_diff=X_away_diff_std,
                               K=ncol(X_home_std),
                               home_sets=data_by_sets$home_sets,
                               away_sets=data_by_sets$away_sets)

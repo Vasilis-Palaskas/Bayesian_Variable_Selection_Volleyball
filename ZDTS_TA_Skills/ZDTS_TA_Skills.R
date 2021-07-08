@@ -2,57 +2,77 @@
 library(rstan)
 library(coda)
 library(shinystan)
+# Choose the working directory of this file (...\\Submitted_Appendix\\Ordered\\)
+
+#---Data Preparation
+source(file.choose())#-Data_Preparation.R
+
 # Choose the working directory of this file (...\\Submitted_Appendix\\ZDTS\\)
-setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
-# Load the properly prepared data for both home and away skill events as well as
-# both home and away teams in each match
-load("X_home")
-load("X_away")
-load("data_zdts_skills")
+# setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_TA_Skills")
 
+#------Skills for both Home and Away Teams
+X_home<-data_by_sets[c(
+  "Home_perfect_serves","Home_very_good_serves",
+  "Home_failed_serves","Home_perfect_passes","Home_very_good_passes",
+  "Home_poor_passes","Home_failed_passes","Home_perfect_att1",
+  "Home_blocked_att1","Home_failed_att1","Home_perfect_att2",
+  "Home_blocked_att2","Home_failed_att2","Home_perfect_blocks",
+  "Home_net_violation_blocks","Home_failed_blocks","Home_failed_settings")
+]
 
-#Model matrices for home and away sets scored, respectively
+X_away<-data_by_sets[c(
+  "Away_perfect_serves","Away_very_good_serves",
+  "Away_failed_serves","Away_perfect_passes","Away_very_good_passes",
+  "Away_poor_passes","Away_failed_passes","Away_perfect_att1",
+  "Away_blocked_att1","Away_failed_att1","Away_perfect_att2",
+  "Away_blocked_att2","Away_failed_att2","Away_perfect_blocks",
+  "Away_net_violation_blocks","Away_failed_blocks","Away_failed_settings")
+]
 
+# Load the properly prepared data ("Data_ordered_skills").
+# load("datalist_ordered")
 
-#Rename the columns
-colnames(X_home)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
-                  "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
-                    "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
-                    "(Home) block net violation","(Home) failed block","(Home) failed setting")
-
-colnames(X_away)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
-                  "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
-                    "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
-                    "(Away) block net violation","(Away) failed block","(Away) failed setting")
-
+X_home_diff<-data.frame(X_home-X_away)
+colnames(X_home_diff)<-c(
+  "perfect_serves","very_good_serves",
+  "failed_serves","perfect_passes","very_good_passes",
+  "poor_passes","failed_passes","perfect_att1",
+  "blocked_att1","failed_att1","perfect_att2",
+  "blocked_att2","failed_att2","perfect_blocks",
+  "net_violation_blocks","failed_blocks","failed_settings")
+#----Rename properly the skill variables
+##----Skill events selected via the BVS process based on PSI Median Threshold
 #### Standardization of the Model Matrices for numerical convenience
-X_home_std<-X_away_std<-matrix(NA,nrow=132,ncol=17)
-for (i in 1:dim(X_home)[2]){
-  X_home_std[,i]<-(X_home[,i]-mean(X_home[,i]))/sd(X_home[,i])
-  X_away_std[,i]<-(X_away[,i]-mean(X_away[,i]))/sd(X_away[,i])
-}
 
-colnames(X_home_std)<-c("(Home) perfect serve","(Home) very good serve","(Home) failed serve","(Home) perfect pass",
-                        "(Home) very good pass","(Home) poor pass","(Home) failed pass","(Home) perfect att1","(Home) blocked att1",
-                        "(Home) failed att1","(Home) perfect att2","(Home) blocked att2","(Home) failed att2","(Home) perfect block",
-                        "(Home) block net violation","(Home) failed block","(Home) failed setting")
+X_home_std<-data.frame(scale(X_home,center=T,scale=T) )
+X_away_std<-data.frame(scale(X_away,center=T,scale=T) )
+X_home_diff_std<-data.frame(scale(X_home-X_away,center=T,scale=T) )
+X_away_diff_std<-data.frame(scale(X_away-X_home,center=T,scale=T) )
+## Vector of teams names along with
+## their ranking positions, points, abilities
+teams <- levels(data_by_sets$home_Team)
+observed_positions<-c("(7)","(6)","(9)","(8)","(5)","(11)","(1)","(12)","(4)","(10)","(3)","(2)")
+observed_points<-c("(36)","(37)","(16)","(28)","(38)","(14)","(62)","(7)","(39)","(16)","(50)","(53)")
 
-colnames(X_away_std)<-c("(Away) perfect serve","(Away) very good serve","(Away) failed serve","(Away) perfect pass",
-                        "(Away) very good pass","(Away) poor pass","(Away) failed pass","(Away) perfect att1","(Away) blocked att1",
-                        "(Away) failed att1","(Away) perfect att2","(Away) blocked att2","(Away) failed att2","(Away) perfect block",
-                        "(Away) block net violation","(Away) failed block","(Away) failed setting")
 
-##----------Step 0: Run the full model to obtain the pilot posterior standard dev. and means
+teams_attack<-paste0(teams," ","Attack")
+teams_defense<-paste0(teams," ","Defense")
+teams_over<-paste0(teams," ","Overall")
+
+teams_pos<-paste0(teams," ",observed_positions)
+teams_points<-paste0(teams," ",observed_points)
+
+#-------Step 0: Run the full model to obtain the pilot posterior stv. and means of model parameters
+
 
 data_zdts_ta_skills<-list(c_thres=2,c_std=5,
-                       n_games=data_zdts_skills$N,
-                       away_team=as.numeric(data_zdts_skills$away_team),
-                       home_team=as.numeric(data_zdts_skills$home_team),
-                       n_teams=data_zdts_skills$n_teams,
-                       X_home=X_home_std,X_away=X_away_std,
-                       K=ncol(X_home_std),
-                       home_sets=data_zdts_skills$home_sets,
-                       away_sets=data_zdts_skills$away_sets)
+                          n_games=dim(data_by_sets)[1],
+                          n_teams=length(levels(data_by_sets$home_Team)),
+                          X_home=X_home_std,X_away=X_away_std,K=ncol(X_home_std),
+                          home_sets=data_by_sets$home_sets,
+                          away_sets=data_by_sets$away_sets,
+                       home_team=as.numeric(data_by_sets$home_Team),
+                       away_team=as.numeric(data_by_sets$away_Team))
 
 
 ## Run full_zdts_only_skills.stan
@@ -104,15 +124,16 @@ T<-70000 # Total MCMC iterations
 for (i in 1:T){
   print(i)
   
+
   # Step 3: Data input needed for running the model through RStan.
-  data_varsel_zdts<-list(n_teams=data_zdts_skills$n_teams,n_games=data_zdts_skills$N,
+  data_varsel_zdts<-list(n_teams=length(levels(data_by_sets$home_Team)),n_games=dim(data_by_sets)[1],
                          c_thres=2,c_std=5,
-                         home_sets=data_zdts_skills$home_sets,
-                         away_sets=data_zdts_skills$away_sets,
-                         X_home=as.matrix(X_home_std),X_away=as.matrix(X_away_std),
+                         home_sets=data_by_sets$home_sets,
+                         away_sets=data_by_sets$away_sets,
+                         X_home=X_home_std,X_away=X_away_std,
                          K=ncol(X_home_std),
-                         home_team=as.numeric(data_zdts_skills$home_team),
-                         away_team=as.numeric(data_zdts_skills$away_team),
+                         home_team=as.numeric(data_by_sets$home_Team),
+                         away_team=as.numeric(data_by_sets$away_Team),
                          gammas_home=gammas_home,gammas_away=gammas_away,
                          post_mean_beta_home=post_mean_beta_home,post_mean_beta_away=post_mean_beta_away,
                          post_sd_beta_home=post_sd_beta_home,post_sd_beta_away=post_sd_beta_away)
