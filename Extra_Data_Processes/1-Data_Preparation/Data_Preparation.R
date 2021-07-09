@@ -3,8 +3,8 @@ library(sqldf)
 library(dplyr)
 #Read and further processing of the data
 
-#
-volley<-read.csv(file.choose(),
+setwd("C:/Users/vasileios palaskas/Desktop/Github folder/Bayesian_Variable_Selection_Volleyball/ZDTS_Skills_Revised")
+volley<-read.csv("Final_Regular_Season_data.csv",
                  header=T)#Load Data\Final_Regular_Season_data.csv
 head(volley,30)
 colnames(volley)[3]<-"home_team"

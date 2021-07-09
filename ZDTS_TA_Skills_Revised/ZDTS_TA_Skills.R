@@ -79,7 +79,7 @@ data_zdts_ta_skills<-list(c_thres=2,c_std=5,
 full_zdts_ta_skills_revised<-stan("full_zdts_skills.stan",
                   data=data_zdts_ta_skills,chains=2,init_r=0.5,
                    iter=10000,warmup=2000,cores=2)### R
-save(full_zdts_ta_skills_revised,file="full_zdts_ta_skills_revised")
+# save(full_zdts_ta_skills_revised,file="full_zdts_ta_skills_revised")
 
 # load("full_zdts_ta_skills_revised")
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
