@@ -81,7 +81,7 @@ full_zdts_ta_skills_revised<-stan("full_zdts_skills.stan",
                    iter=10000,warmup=2000,cores=2)### R
 save(full_zdts_ta_skills_revised,file="full_zdts_ta_skills_revised")
 
-load("full_zdts_ta_skills_revised")
+# load("full_zdts_ta_skills_revised")
 # Extract the posterior summary statistics of both candidate variables' parameters and rest of other parameters.
 
 betas_summary<-summary(full_zdts_ta_skills_revised, pars = c("beta_home","beta_away"))$summary
